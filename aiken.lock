@@ -7,11 +7,6 @@ version = "v2.2.0"
 source = "github"
 
 [[requirements]]
-name = "sidan-lab/vodka"
-version = "0.1.13"
-source = "github"
-
-[[requirements]]
 name = "aiken-lang/fuzz"
 version = "v2.1.1"
 source = "github"
@@ -19,12 +14,6 @@ source = "github"
 [[packages]]
 name = "aiken-lang/stdlib"
 version = "v2.2.0"
-requirements = []
-source = "github"
-
-[[packages]]
-name = "sidan-lab/vodka"
-version = "0.1.13"
 requirements = []
 source = "github"
 

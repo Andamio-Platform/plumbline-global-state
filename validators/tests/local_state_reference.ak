@@ -3,12 +3,13 @@ use aiken/collection/list.{length, map, push}
 use cardano/assets.{from_asset, merge, negate, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction, placeholder}
 use global/local_state_reference as ls_ref
-use mocktail.{mock_pub_key_address, mock_pub_key_output, mock_utxo_ref}
-use tests/utils.{
-  create_min_ada_token_value, local_state_ref_addr, local_state_ref_cs,
-  stake_cred, state_token_name,
+use plumbproof.{
+  create_min_ada_token_value, mock_pub_key_address, mock_pub_key_output,
+  mock_utxo_ref, script_address_stake_cred, stake_cred, state_token_name,
 }
 use types/local_state_reference_data.{LocalStateReferenceData}
+
+const local_state_ref_cs = blake2b_224("local_state_ref_cs")
 
 // call minting
 fn local_state_reference_mint(red: LocalStateReferenceData, tx: Transaction) {
@@ -28,7 +29,7 @@ fn local_state_reference_spend(dat: ByteArray, tx: Transaction) {
     state_token_name,
     Some(dat),
     "",
-    mock_utxo_ref(0, 0),
+    mock_utxo_ref("0", 0),
     tx,
   )
 }
@@ -41,8 +42,12 @@ fn create_local_state_reference_output(
     variants,
     fn(variant) {
       Output {
-        address: local_state_ref_addr,
-        value: create_min_ada_token_value(local_state_ref_cs, state_token_name),
+        address: script_address_stake_cred("local_state_ref_cs"),
+        value: create_min_ada_token_value(
+          local_state_ref_cs,
+          state_token_name,
+          1,
+        ),
         datum: InlineDatum(blake2b_224("local_state_id")),
         reference_script: Some(blake2b_224(variant)),
       }
@@ -53,8 +58,8 @@ fn create_local_state_reference_output(
 // create wallet output with local state id token
 fn create_instance_id_output(ls_id: ByteArray) -> Output {
   mock_pub_key_output(
-    mock_pub_key_address(0, None),
-    create_min_ada_token_value(blake2b_224(ls_id), "local_state_id"),
+    mock_pub_key_address("0"),
+    create_min_ada_token_value(blake2b_224(ls_id), "local_state_id", 1),
   )
 }
 
@@ -152,7 +157,7 @@ fn local_state_reference_spend_burn_succeed_tx(variant: ByteArray) {
     ..placeholder,
     inputs: [
       Input(
-        mock_utxo_ref(0, 0),
+        mock_utxo_ref("0", 0),
         head_list(create_local_state_reference_output([variant])),
       ),
     ],

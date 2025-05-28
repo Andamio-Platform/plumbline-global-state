@@ -5,15 +5,15 @@ use aiken/primitive/bytearray
 use cardano/address.{Script}
 use cardano/assets.{from_asset}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction, placeholder}
-use plumbline/plumb_global_state.{hash_local_state}
 use global/init_global_state_obs as init_obs
-use mocktail.{mock_script_address, mock_utxo_ref}
 use plumbline.{create_100}
-use tests/utils.{
-  create_empty_gs_dat, create_global_output, create_min_ada_token_value,
-  global_cs, global_state_addr, global_state_addr_v1,
-}
+use plumbline/plumb_global_state.{hash_local_state}
 use plumbline/types/global_state.{GlobalStateDatum}
+use plumbproof.{
+  create_empty_gs_dat, create_global_output, create_min_ada_token_value,
+  global_cs, global_state_addr, mock_script_address, mock_utxo_ref,
+  script_address_stake_cred,
+}
 use types/global_state_v1.{GlobalStateDatumV1, LocalStateInformationV1}
 
 // call withdraw
@@ -77,7 +77,7 @@ test init_obs_withdraw_empty_fail2_value() fail {
       outputs: [
         Output {
           ..create_global_output(user_name, create_empty_gs_dat(user_name)),
-          value: create_min_ada_token_value(global_cs, user_name),
+          value: create_min_ada_token_value(global_cs, user_name, 1),
         },
       ],
     },
@@ -95,7 +95,7 @@ test init_obs_withdraw_empty_fail3_address() fail {
       outputs: [
         Output {
           ..create_global_output(user_name, create_empty_gs_dat(user_name)),
-          address: mock_script_address(1, None),
+          address: mock_script_address("1"),
         },
       ],
     },
@@ -112,10 +112,10 @@ fn init_gs_obs_tx_no_mint_ls(
     ..placeholder,
     inputs: [
       Input(
-        mock_utxo_ref(0, 0),
+        mock_utxo_ref("0", 0),
         Output {
-          address: global_state_addr_v1,
-          value: create_min_ada_token_value(global_cs, create_100(alias)),
+          address: script_address_stake_cred("global_state_addr_v1"),
+          value: create_min_ada_token_value(global_cs, create_100(alias), 1),
           datum: InlineDatum(gs_dat_v1),
           reference_script: None,
         },

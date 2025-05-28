@@ -1,7 +1,7 @@
 //// @hidden
 
 use cardano/address.{Address}
-use plumbline/plumb_value.{FlatValue}
+use plumbline/types/flat_value.{FlatValue}
 
 // Type present at index referene utxo.
 
