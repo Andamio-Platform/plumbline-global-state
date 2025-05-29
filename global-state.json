@@ -1,8 +1,8 @@
 {
   "preamble": {
-    "title": "andamio/andamio-aiken-contracts",
+    "title": "Andamio-Platform/plumbline-global-state",
     "description": "Aiken contracts used by the andamio protocol.",
-    "version": "0.0.0",
+    "version": "0.8.0",
     "plutusVersion": "v3",
     "compiler": {
       "name": "Aiken",

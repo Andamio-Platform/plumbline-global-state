@@ -1,13 +1,13 @@
-name = "andamio/andamio-aiken-contracts"
-version = "0.0.0"
+name = "Andamio-Platform/plumbline-global-state"
+version = "0.8.0"
 compiler = "v1.1.16"
 plutus = "v3"
 license = "Apache-2.0"
 description = "Aiken contracts used by the andamio protocol."
 
 [repository]
-user = "andamio"
-project = "andamio-aiken-contracts"
+user = "Platform"
+project = "plumbline-global-state"
 platform = "github"
 
 [[dependencies]]
