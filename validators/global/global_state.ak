@@ -10,12 +10,9 @@ use cardano/transaction.{
 use plumbline/plumb_global_state.{
   create_new_gs_dat_burn, create_new_gs_dat_delete, create_new_gs_dat_mint,
 }
-use plumbline/plumb_value.{create_100, create_222, quantity_is_one}
 use plumbline/plumb_input.{find_input_with_policy, in_out_token_address_same}
-use plumbline/plumb_output.{
-  
-  policy_id_present_in_output, 
-}
+use plumbline/plumb_output.{policy_id_present_in_output}
+use plumbline/plumb_value.{create_100, create_222, quantity_is_one}
 use plumbline/types/global_state.{
   BurnLocalState, DeleteState, GlobalStateAction, GlobalStateDatum,
   LocalStateInformation, MintLocalState, MoveState,
@@ -41,7 +38,6 @@ pub fn validate_input_and_output(
     outputs,
     fn(output) {
       (output.address == own_input.output.address)? && (output.datum == InlineDatum(
-        // index where we can find it?
         datum,
       ))? && quantity_is_one(output.value, global_cs, create_100(datum.alias))?
     },
@@ -78,7 +74,6 @@ validator global_state_validator(
           create_new_gs_dat_mint(datum, ls_info),
         )
       }
-
       // output index in redeemer?
       BurnLocalState(ls_info, new_data) -> {
         let Transaction { inputs, outputs, mint, .. } = tx
@@ -91,7 +86,6 @@ validator global_state_validator(
           create_new_gs_dat_burn(datum, ls_info, new_data),
         )
       }
-
       DeleteState(ls_id, ls_data, index) -> {
         let Transaction { inputs, outputs, .. } = tx
         expect Some(datum) = datum_opt

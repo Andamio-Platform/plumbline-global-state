@@ -1,10 +1,10 @@
 //// Plumbline provides on chain utility functions. Specifically used for development of the andamio protocol.
 
 use plumbline/plumb_address
+use plumbline/plumb_global_state
 use plumbline/plumb_input
 use plumbline/plumb_output
 use plumbline/plumb_value
-use plumbline/plumb_global_state
 
 // Address
 /// See: [`plumb_address`](./plumbline/plumb_address.html)
@@ -86,3 +86,11 @@ pub const create_new_gs_dat_burn = plumb_global_state.create_new_gs_dat_burn
 
 /// See: [`plumb_global_state`](./plumbline/plumb_global_state.html)
 pub const create_new_gs_dat_delete = plumb_global_state.create_new_gs_dat_delete
+
+/// See: [`plumb_global_state`](./plumbline/plumb_global_state.html)
+pub const validate_global_state_mint_ls =
+  plumb_global_state.validate_global_state_mint_ls
+
+/// See: [`plumb_global_state`](./plumbline/plumb_global_state.html)
+pub const validate_global_state_burn_ls =
+  plumb_global_state.validate_global_state_burn_ls

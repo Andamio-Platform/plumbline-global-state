@@ -5,11 +5,9 @@ use aiken/collection/list.{all, any, unique}
 use cardano/address.{Address, Script, StakeCredential}
 use cardano/assets.{AssetName, PolicyId, quantity_of, tokens}
 use cardano/transaction.{InlineDatum, OutputReference, Transaction, find_input}
-use plumbline/plumb_output.{
-   policy_id_present_in_outputs,
-}
-use plumbline/plumb_value.{two_token_value, quantity_is_one}
 use plumbline/plumb_address.{get_script_hash_from_address}
+use plumbline/plumb_output.{policy_id_present_in_outputs}
+use plumbline/plumb_value.{quantity_is_one, two_token_value}
 use types/local_state_reference_data.{LocalStateReferenceData}
 
 // validator where local state reference scripts are stored to be used in a global state.
@@ -21,7 +19,7 @@ validator local_state_reference(
 ) {
   spend(
     datum_opt: Option<ByteArray>,
-    _redeemer: ByteArray,
+    _redeemer: Data,
     output_reference: OutputReference,
     tx: Transaction,
   ) {
@@ -35,20 +33,20 @@ validator local_state_reference(
     ) == False)?
   }
 
-  mint(redeemer: LocalStateReferenceData, policy_id: PolicyId, tx: Transaction) {
+  mint(lsrd: LocalStateReferenceData, policy_id: PolicyId, tx: Transaction) {
     (dict.size(tokens(tx.mint, policy_id)) == 1)? && if (quantity_of(
       tx.mint,
       policy_id,
       state_token_name,
     ) > 0)? {
       all(
-        redeemer.ls_reference_script_hashes,
+        lsrd.ls_reference_script_hashes,
         fn(reference_script) {
           any(
             tx.outputs,
             fn(output) {
               quantity_is_one(output.value, policy_id, state_token_name) && (output.datum == InlineDatum(
-                redeemer.ls_id,
+                lsrd.ls_id,
               ))? && (output.address == Address(
                 Script(policy_id),
                 Some(stake_cred),
@@ -58,9 +56,9 @@ validator local_state_reference(
             },
           )
         },
-      ) && policy_id_present_in_outputs(tx.outputs, redeemer.ls_id)? && (unique(
-        redeemer.ls_reference_script_hashes,
-      ) == redeemer.ls_reference_script_hashes)?
+      ) && policy_id_present_in_outputs(tx.outputs, lsrd.ls_id)? && (unique(
+        lsrd.ls_reference_script_hashes,
+      ) == lsrd.ls_reference_script_hashes)?
     } else {
       True
     }

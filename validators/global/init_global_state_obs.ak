@@ -1,15 +1,15 @@
 //// @hidden
 
 use aiken/cbor.{serialise}
-use aiken/collection/list.{any, map, sort}
-use aiken/primitive/bytearray
+use aiken/collection/list.{any, map}
+use aiken/crypto.{blake2b_256}
 use cardano/address.{Address, Credential}
 use cardano/assets.{PolicyId}
 use cardano/certificate.{Certificate, RegisterCredential}
 use cardano/transaction.{InlineDatum, Transaction}
 use plumbline/plumb_global_state.{hash_local_state}
+use plumbline/plumb_input.{find_input_with_single_token}
 use plumbline/plumb_value.{create_100, quantity_is_one}
-use plumbline/plumb_input.{find_input_with_single_token, }
 use plumbline/types/global_state.{GlobalStateDatum}
 use types/global_state_v1.{GlobalStateDatumV1, LocalStateInformationV1}
 
@@ -42,22 +42,14 @@ validator init_global_state_obs_v2(
               if minted == False {
                 Pair(
                   local_state_id,
-                  hash_local_state(serialise(local_state_data), ""),
+                  hash_local_state(blake2b_256(serialise(local_state_data)), ""),
                 )
               } else {
                 fail
               }
             },
           )
-        GlobalStateDatum {
-          alias: redeemer,
-          local_state_data: sort(
-            ls_info,
-            fn(Pair(ls_id1, _), Pair(ls_id2, _)) {
-              bytearray.compare(ls_id1, ls_id2)
-            },
-          ),
-        }
+        GlobalStateDatum { alias: redeemer, local_state_data: ls_info }
       }
 
     any(

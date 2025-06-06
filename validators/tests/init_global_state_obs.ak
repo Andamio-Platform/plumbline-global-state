@@ -1,7 +1,6 @@
-use aiken/builtin.{blake2b_224}
+use aiken/builtin.{blake2b_224, blake2b_256}
 use aiken/cbor.{serialise}
-use aiken/collection/list.{drop, map, push, sort}
-use aiken/primitive/bytearray
+use aiken/collection/list.{drop, map, push}
 use cardano/address.{Script}
 use cardano/assets.{from_asset}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction, placeholder}
@@ -132,17 +131,14 @@ fn create_gs_dat_v1(
 ) -> GlobalStateDatum {
   GlobalStateDatum(
     alias,
-    sort(
-      map(
-        ls_infos,
-        fn(n) {
-          Pair(
-            n.local_state_id,
-            hash_local_state(serialise(n.local_state_data), ""),
-          )
-        },
-      ),
-      fn(Pair(key1, _), Pair(key2, _)) { bytearray.compare(key1, key2) },
+    map(
+      ls_infos,
+      fn(n) {
+        Pair(
+          n.local_state_id,
+          hash_local_state(blake2b_256(serialise(n.local_state_data)), ""),
+        )
+      },
     ),
   )
 }
