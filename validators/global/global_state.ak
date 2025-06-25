@@ -29,7 +29,9 @@ pub fn validate_input_and_output(
   datum: GlobalStateDatum,
 ) -> Bool {
   expect Some(own_input) = find_input(inputs, output_reference)
-  quantity_is_one(own_input.output.value, global_cs, create_100(datum.alias))? && in_out_token_address_same(
+  let own_input_output = own_input.output
+  let tn_100 = create_100(datum.alias)
+  quantity_is_one(own_input_output.value, global_cs, tn_100)? && in_out_token_address_same(
     inputs,
     outputs,
     global_cs,
@@ -37,9 +39,9 @@ pub fn validate_input_and_output(
   )? && any(
     outputs,
     fn(output) {
-      (output.address == own_input.output.address)? && (output.datum == InlineDatum(
+      (output.address == own_input_output.address)? && (output.datum == InlineDatum(
         datum,
-      ))? && quantity_is_one(output.value, global_cs, create_100(datum.alias))?
+      ))? && quantity_is_one(output.value, global_cs, tn_100)?
     },
   )
 }
@@ -59,12 +61,14 @@ validator global_state_validator(
       MintLocalState(ls_info) -> {
         let Transaction { inputs, reference_inputs, outputs, mint, .. } = tx
         expect Some(datum) = datum_opt
-        (quantity_of(mint, ls_info.local_state_cs, datum.alias) > 0)? && any(
+        let ls_cs = ls_info.local_state_cs
+        (quantity_of(mint, ls_cs, datum.alias) > 0)? && any(
           reference_inputs,
           fn(input) {
-            policy_id_present_in_output(input.output, local_state_register_cs) && input.output.datum == InlineDatum(
+            let input_output = input.output
+            policy_id_present_in_output(input_output, local_state_register_cs) && input_output.datum == InlineDatum(
               ls_info.local_state_id,
-            ) && input.output.reference_script == Some(ls_info.local_state_cs)
+            ) && input_output.reference_script == Some(ls_cs)
           },
         )? && validate_input_and_output(
           inputs,
@@ -74,7 +78,6 @@ validator global_state_validator(
           create_new_gs_dat_mint(datum, ls_info),
         )
       }
-      // output index in redeemer?
       BurnLocalState(ls_info, new_data) -> {
         let Transaction { inputs, outputs, mint, .. } = tx
         expect Some(datum) = datum_opt
@@ -107,16 +110,13 @@ validator global_state_validator(
         expect InlineDatum(index_ref_datum) =
           find_input_with_policy(reference_inputs, index_ref_cs).output.datum
         expect index_data: IndexData = index_ref_datum
+        let alias = datum.alias
 
-        quantity_is_one(
-          own_input.output.value,
-          global_cs,
-          create_100(datum.alias),
-        )? && in_out_token_address_same(
+        quantity_is_one(own_input.output.value, global_cs, create_100(alias))? && in_out_token_address_same(
           inputs,
           outputs,
           global_cs,
-          create_222(datum.alias),
+          create_222(alias),
         )? && has(index_data.init_gs_obs_sh_list, Script(obs))? && (head_list(
           withdrawals,
         ) == Pair(Script(obs), 0))?

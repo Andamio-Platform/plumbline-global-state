@@ -45,11 +45,18 @@ pub fn find_output_with_addr(outputs: List<Output>, addr: Address) -> Output {
 }
 
 /// Merge all values from a list of outputs.
-pub fn merge_values_output(outputs: List<Output>) -> Value {
+pub fn merge_values_output1(outputs: List<Output>) -> Value {
   if outputs == [] {
     zero
   } else {
     let head_out = head_list(outputs)
     merge(head_out.value, merge_values_output(tail_list(outputs)))
+  }
+}
+
+pub fn merge_values_output(outputs: List<Output>) -> Value {
+  when outputs is {
+    [x, ..xs] -> merge(x.value, merge_values_output(xs))
+    [] -> zero
   }
 }

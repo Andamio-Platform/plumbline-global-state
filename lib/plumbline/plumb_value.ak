@@ -1,9 +1,8 @@
-use aiken/builtin.{head_list, snd_pair, tail_list}
 use aiken/collection/dict.{empty, insert, size, to_pairs}
 use aiken/collection/list.{all}
 use aiken/primitive/bytearray.{concat}
 use cardano/assets.{
-  AssetName, PolicyId, Value, add, quantity_of, to_dict, tokens,
+  AssetName, PolicyId, Value, add, flatten, quantity_of, to_dict, tokens,
   without_lovelace, zero,
 }
 use plumbline/types/flat_value.{FlatValue}
@@ -28,12 +27,7 @@ pub fn two_token_value(value: Value) -> Bool {
       |> to_dict
       |> to_pairs
   is {
-    [tnams] ->
-      (
-        tnams
-          |> snd_pair
-          |> size
-      ) == 1
+    [Pair(_cs, tn_ams)] -> size(tn_ams) == 1
     _ -> False
   }
 }
@@ -56,28 +50,31 @@ pub fn quantity_is_one(value: Value, cs: PolicyId, tn: AssetName) -> Bool {
 }
 
 /// Check first value is greater or equal to second one.
-pub fn geq_value(
-  value: Value,
-  flat_val: List<(PolicyId, AssetName, Int)>,
-) -> Bool {
-  all(flat_val, fn((cs, tn, am)) { quantity_of(value, cs, tn) >= am })
+pub fn geq_value(gr_value: Value, l_value: Value) -> Bool {
+  all(
+    flatten(l_value),
+    fn((cs, tn, am)) { quantity_of(gr_value, cs, tn) >= am },
+  )
 }
 
 /// Substract first from second value.
-pub fn substract_value(
+pub fn substract_value(value: Value, flat_val: Value) -> Value {
+  substract_value_helper(value, flatten(flat_val))
+}
+
+fn substract_value_helper(
   value: Value,
   flat_val: List<(PolicyId, AssetName, Int)>,
 ) -> Value {
-  if flat_val == [] {
-    zero
-  } else {
-    let (cs, tn, am) = head_list(flat_val)
-    add(
-      substract_value(value, tail_list(flat_val)),
-      cs,
-      tn,
-      am - quantity_of(value, cs, tn),
-    )
+  when flat_val is {
+    [] -> zero
+    [(cs, tn, am), ..xs] ->
+      add(
+        substract_value_helper(value, xs),
+        cs,
+        tn,
+        am - quantity_of(value, cs, tn),
+      )
   }
 }
 
@@ -93,13 +90,9 @@ pub fn flat_val_paid(flat_val: List<FlatValue>, value: Value) -> Bool {
 
 /// Create a `Value` out of a `FlatValue`.
 pub fn flat_val_to_value(flat_val: List<FlatValue>, value: Value) -> Value {
-  if flat_val == [] {
-    value
-  } else {
-    let flat_v = head_list(flat_val)
-    flat_val_to_value(
-      tail_list(flat_val),
-      add(value, flat_v.policy_id, flat_v.token_name, flat_v.amount),
-    )
+  when flat_val is {
+    [] -> value
+    [x, ..xs] ->
+      flat_val_to_value(xs, add(value, x.policy_id, x.token_name, x.amount))
   }
 }

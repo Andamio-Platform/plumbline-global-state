@@ -53,36 +53,28 @@ pub fn create_new_gs_dat_mint(
   gs_dat: GlobalStateDatum,
   ls_info: LocalStateInformation,
 ) -> GlobalStateDatum {
+  let ls_id = ls_info.local_state_id
+  let ls_cs = ls_info.local_state_cs
+  let gs_data = gs_dat.local_state_data
   GlobalStateDatum {
     ..gs_dat,
     local_state_data: if ls_info.local_state_index > -1 {
+      let ls_data_hash = ls_info.local_state_data_hash
       list.push(
         at_validate(
-          gs_dat.local_state_data,
+          gs_data,
           [],
-          ls_info.local_state_id,
-          hash_local_state(ls_info.local_state_data_hash, ""),
+          ls_id,
+          hash_local_state(ls_data_hash, ""),
           ls_info.local_state_index,
         ),
-        Pair(
-          ls_info.local_state_id,
-          hash_local_state(
-            ls_info.local_state_data_hash,
-            ls_info.local_state_cs,
-          ),
-        ),
+        Pair(ls_id, hash_local_state(ls_data_hash, ls_cs)),
       )
     } else {
-      if has_key(gs_dat.local_state_data, ls_info.local_state_id) {
+      if has_key(gs_data, ls_id) {
         fail
       } else {
-        list.push(
-          gs_dat.local_state_data,
-          Pair(
-            ls_info.local_state_id,
-            hash_local_state("", ls_info.local_state_cs),
-          ),
-        )
+        list.push(gs_data, Pair(ls_id, hash_local_state("", ls_cs)))
       }
     },
   }
@@ -94,17 +86,18 @@ pub fn create_new_gs_dat_burn(
   ls_info: LocalStateInformation,
   new_data: ByteArray,
 ) -> GlobalStateDatum {
+  let ls_id = ls_info.local_state_id
   GlobalStateDatum {
     ..gs_dat,
     local_state_data: list.push(
       at_validate(
         gs_dat.local_state_data,
         [],
-        ls_info.local_state_id,
+        ls_id,
         hash_local_state(ls_info.local_state_data_hash, ls_info.local_state_cs),
         ls_info.local_state_index,
       ),
-      Pair(ls_info.local_state_id, hash_local_state(new_data, "")),
+      Pair(ls_id, hash_local_state(new_data, "")),
     ),
   }
 }

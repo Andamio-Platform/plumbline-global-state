@@ -22,12 +22,13 @@ validator init_global_state_obs_v2(
   withdraw(redeemer: ByteArray, _account: Credential, tx: Transaction) {
     let Transaction { inputs, outputs, mint, .. } = tx
     // datum validation and update from old global state
+    let tn_100 = create_100(redeemer)
     let global_state_datum =
-      if quantity_is_one(mint, global_cs, create_100(redeemer)) {
+      if quantity_is_one(mint, global_cs, tn_100) {
         GlobalStateDatum { alias: redeemer, local_state_data: [] }
       } else {
         expect InlineDatum(gs_dat_old_data) =
-          find_input_with_single_token(inputs, global_cs, create_100(redeemer)).output.datum
+          find_input_with_single_token(inputs, global_cs, tn_100).output.datum
         expect gs_dat_old: GlobalStateDatumV1 = gs_dat_old_data
         let ls_info =
           map(
@@ -58,7 +59,7 @@ validator init_global_state_obs_v2(
         (output.address == global_state_addr)? && quantity_is_one(
           output.value,
           global_cs,
-          create_100(redeemer),
+          tn_100,
         )? && (output.datum == InlineDatum(global_state_datum))?
       },
     )

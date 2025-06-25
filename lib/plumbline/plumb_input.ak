@@ -1,4 +1,3 @@
-use aiken/builtin.{head_list, tail_list}
 use aiken/collection/list.{find}
 use cardano/assets.{AssetName, PolicyId, Value, merge, zero}
 use cardano/transaction.{Input, Output}
@@ -57,10 +56,8 @@ pub fn in_out_token_address_same(
 
 /// Merge all values from a list of inputs.
 pub fn merge_value_inputs(inputs: List<Input>) -> Value {
-  if inputs == [] {
-    zero
-  } else {
-    let head_out = head_list(inputs)
-    merge(head_out.output.value, merge_value_inputs(tail_list(inputs)))
+  when inputs is {
+    [x, ..xs] -> merge(x.output.value, merge_value_inputs(xs))
+    [] -> zero
   }
 }

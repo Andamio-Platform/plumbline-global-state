@@ -34,31 +34,30 @@ validator local_state_reference(
   }
 
   mint(lsrd: LocalStateReferenceData, policy_id: PolicyId, tx: Transaction) {
+    let ref_scr_hash = lsrd.ls_reference_script_hashes
+    let out_dat = InlineDatum(lsrd.ls_id)
+    let own_addr = Address(Script(policy_id), Some(stake_cred))
     (dict.size(tokens(tx.mint, policy_id)) == 1)? && if (quantity_of(
       tx.mint,
       policy_id,
       state_token_name,
     ) > 0)? {
       all(
-        lsrd.ls_reference_script_hashes,
+        ref_scr_hash,
         fn(reference_script) {
           any(
             tx.outputs,
             fn(output) {
-              quantity_is_one(output.value, policy_id, state_token_name) && (output.datum == InlineDatum(
-                lsrd.ls_id,
-              ))? && (output.address == Address(
-                Script(policy_id),
-                Some(stake_cred),
-              ))? && two_token_value(output.value)? && output.reference_script == Some(
-                reference_script,
-              )
+              let value = output.value
+              quantity_is_one(value, policy_id, state_token_name) && (output.datum == out_dat)? && (output.address == own_addr)? && two_token_value(
+                value,
+              )? && output.reference_script == Some(reference_script)
             },
           )
         },
       ) && policy_id_present_in_outputs(tx.outputs, lsrd.ls_id)? && (unique(
-        lsrd.ls_reference_script_hashes,
-      ) == lsrd.ls_reference_script_hashes)?
+        ref_scr_hash,
+      ) == ref_scr_hash)?
     } else {
       True
     }

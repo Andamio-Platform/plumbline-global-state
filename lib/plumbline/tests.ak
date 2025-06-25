@@ -2,7 +2,7 @@ use aiken/builtin.{blake2b_224, integer_to_bytearray}
 use aiken/collection/list
 use aiken/fuzz
 use aiken/primitive/bytearray
-use cardano/assets.{add, flatten, from_asset, from_lovelace, zero}
+use cardano/assets.{add, from_asset, from_lovelace, zero}
 use cardano/transaction.{Input, Output}
 use plumbline/plumb_address.{get_script_hash_from_address}
 use plumbline/plumb_global_state.{
@@ -315,31 +315,29 @@ test quantity_is_one_test_fail() fail {
 test geq_value_succeed() {
   let value1 = create_min_ada_token_value(blake2b_224("cs1"), "cs1", 5)
   let value2 = create_min_ada_token_value(blake2b_224("cs1"), "cs1", 6)
-  geq_value(value2, flatten(value1))
+  geq_value(value2, value1)
 }
 
 test geq_value_fail1() fail {
   let value1 = create_min_ada_token_value(blake2b_224("cs1"), "cs1", 5)
   let value2 = create_min_ada_token_value(blake2b_224("cs1"), "cs1", 6)
-  geq_value(value1, flatten(value2))
+  geq_value(value1, value2)
 }
 
 test geq_value_fail2() fail {
   let value1 = create_min_ada_token_value(blake2b_224("cs1"), "cs1", 5)
   let value2 = from_lovelace(5)
-  geq_value(value2, flatten(value1))
+  geq_value(value2, value1)
 }
 
 test substract_value_succeed1() {
-  substract_value(from_lovelace(5), flatten(from_lovelace(10))) == from_lovelace(
-    5,
-  )
+  substract_value(from_lovelace(5), from_lovelace(10)) == from_lovelace(5)
 }
 
 test substract_value_succeed2() {
   substract_value(
     add(from_lovelace(10), "cs1", "tn1", 5),
-    flatten(add(from_lovelace(5), "cs1", "tn1", 5)),
+    add(from_lovelace(5), "cs1", "tn1", 5),
   ) == add(from_lovelace(-5), "cs1", "tn1", 0)
 }
 
