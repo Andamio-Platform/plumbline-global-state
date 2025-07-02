@@ -8,7 +8,7 @@ use plumbline/plumb_global_state.{hash_local_state}
 use plumbline/plumb_value.{create_100}
 use plumbline/types/global_state.{
   BurnLocalState, DeleteState, GlobalStateAction, GlobalStateDatum,
-  LocalStateInformation, MintLocalState, MoveState,
+  MintLocalState, MoveState,
 }
 use plumbproof.{
   create_empty_gs_dat, create_global_output, create_min_ada_token_value,
@@ -263,12 +263,10 @@ test global_state_spend_mint_success1_empty() {
   global_state_spend(
     create_empty_gs_dat(user_name),
     MintLocalState(
-      LocalStateInformation(
-        blake2b_224("local_state_id"),
-        -1,
-        "",
-        blake2b_224("local_state_cs"),
-      ),
+      blake2b_224("local_state_id"),
+      -1,
+      "",
+      blake2b_224("local_state_cs"),
     ),
     global_state_spend_mint_success_tx(user_name),
   )
@@ -281,12 +279,10 @@ test global_state_spend_mint_fail1_minting() fail {
   global_state_spend(
     create_empty_gs_dat(user_name),
     MintLocalState(
-      LocalStateInformation(
-        blake2b_224("local_state_id"),
-        -1,
-        "",
-        blake2b_224("local_state_cs"),
-      ),
+      blake2b_224("local_state_id"),
+      -1,
+      "",
+      blake2b_224("local_state_cs"),
     ),
     Transaction { ..global_state_spend_mint_success_tx(user_name), mint: zero },
   )
@@ -299,12 +295,10 @@ test global_state_spend_mint_fail2_reference() fail {
   global_state_spend(
     create_empty_gs_dat(user_name),
     MintLocalState(
-      LocalStateInformation(
-        blake2b_224("local_state_id"),
-        -1,
-        "",
-        blake2b_224("local_state_cs"),
-      ),
+      blake2b_224("local_state_id"),
+      -1,
+      "",
+      blake2b_224("local_state_cs"),
     ),
     Transaction {
       ..global_state_spend_mint_success_tx(user_name),
@@ -354,12 +348,10 @@ test global_state_spend_burn_success1_empty() {
       hash_local_state("", blake2b_224("local_state_cs")),
     ),
     BurnLocalState(
-      LocalStateInformation(
-        blake2b_224("local_state_id"),
-        0,
-        "",
-        blake2b_224("local_state_cs"),
-      ),
+      blake2b_224("local_state_id"),
+      0,
+      "",
+      blake2b_224("local_state_cs"),
       "",
     ),
     global_state_spend_burn_success_tx(user_name),
@@ -378,12 +370,10 @@ test global_state_spend_burn_fail1_minting() fail {
       hash_local_state("", blake2b_224("local_state_cs")),
     ),
     BurnLocalState(
-      LocalStateInformation(
-        blake2b_224("local_state_id"),
-        -1,
-        "",
-        blake2b_224("local_state_cs"),
-      ),
+      blake2b_224("local_state_id"),
+      -1,
+      "",
+      blake2b_224("local_state_cs"),
       "",
     ),
     Transaction { ..global_state_spend_burn_success_tx(user_name), mint: zero },

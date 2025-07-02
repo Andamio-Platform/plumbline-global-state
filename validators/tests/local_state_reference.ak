@@ -3,16 +3,19 @@ use aiken/collection/list.{length, map, push}
 use cardano/assets.{from_asset, merge, negate, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction, placeholder}
 use global/local_state_reference as ls_ref
+use plumbline/types/local_state_reference_data.{LocalStateReferenceData}
 use plumbproof.{
   create_min_ada_token_value, mock_pub_key_address, mock_pub_key_output,
   mock_utxo_ref, script_address_stake_cred, stake_cred, state_token_name,
 }
-use types/local_state_reference_data.{LocalStateReferenceData}
 
 const local_state_ref_cs = blake2b_224("local_state_ref_cs")
 
 // call minting
-fn local_state_reference_mint(red: LocalStateReferenceData, tx: Transaction) {
+fn local_state_reference_mint(
+  red: List<LocalStateReferenceData>,
+  tx: Transaction,
+) {
   ls_ref.local_state_reference.mint(
     stake_cred,
     state_token_name,
@@ -83,9 +86,14 @@ test local_state_reference_mint_mint_succeed() {
   let variants = ["1", "2", "3"]
   let local_state_id = "local_state_id"
   local_state_reference_mint(
-    LocalStateReferenceData(
-      blake2b_224(local_state_id),
-      map(variants, fn(variant) { blake2b_224(variant) }),
+    map(
+      variants,
+      fn(variant) {
+        LocalStateReferenceData(
+          blake2b_224(local_state_id),
+          blake2b_224(variant),
+        )
+      },
     ),
     local_state_reference_mint_mint_succeed_tx(variants, local_state_id),
   )
@@ -97,9 +105,14 @@ test local_state_reference_mint_mint_fail1_nft() fail {
   let variants = ["1", "2", "3"]
   let local_state_id = "local_state_id"
   local_state_reference_mint(
-    LocalStateReferenceData(
-      blake2b_224(local_state_id),
-      map(variants, fn(variant) { blake2b_224(variant) }),
+    map(
+      variants,
+      fn(variant) {
+        LocalStateReferenceData(
+          blake2b_224(local_state_id),
+          blake2b_224(variant),
+        )
+      },
     ),
     local_state_reference_mint_mint_succeed_tx(variants, "wrong"),
   )
@@ -111,9 +124,14 @@ test local_state_reference_mint_mint_fail2_uniqueness() fail {
   let variants = ["1", "2", "3", "1"]
   let local_state_id = "local_state_id"
   local_state_reference_mint(
-    LocalStateReferenceData(
-      blake2b_224(local_state_id),
-      map(variants, fn(variant) { blake2b_224(variant) }),
+    map(
+      variants,
+      fn(variant) {
+        LocalStateReferenceData(
+          blake2b_224(local_state_id),
+          blake2b_224(variant),
+        )
+      },
     ),
     local_state_reference_mint_mint_succeed_tx(variants, local_state_id),
   )
@@ -125,9 +143,14 @@ test local_state_reference_mint_mint_fail3_redeemer() fail {
   let variants = ["1", "2", "3"]
   let local_state_id = "local_state_id"
   local_state_reference_mint(
-    LocalStateReferenceData(
-      blake2b_224(local_state_id),
-      map(["1", "2", "3", "4"], fn(variant) { blake2b_224(variant) }),
+    map(
+      ["1", "2", "3", "4"],
+      fn(variant) {
+        LocalStateReferenceData(
+          blake2b_224(local_state_id),
+          blake2b_224(variant),
+        )
+      },
     ),
     local_state_reference_mint_mint_succeed_tx(variants, local_state_id),
   )
@@ -140,9 +163,14 @@ test local_state_reference_mint_mint_fail4_wrong_tn() fail {
   let local_state_id = "local_state_id"
   let tx = local_state_reference_mint_mint_succeed_tx(variants, local_state_id)
   local_state_reference_mint(
-    LocalStateReferenceData(
-      blake2b_224(local_state_id),
-      map(["1", "2", "3", "4"], fn(variant) { blake2b_224(variant) }),
+    map(
+      ["1", "2", "3", "4"],
+      fn(variant) {
+        LocalStateReferenceData(
+          blake2b_224(local_state_id),
+          blake2b_224(variant),
+        )
+      },
     ),
     Transaction {
       ..tx,
@@ -170,7 +198,7 @@ fn local_state_reference_spend_burn_succeed_tx(variant: ByteArray) {
 test local_state_reference_burn_succeed() {
   let tx = local_state_reference_spend_burn_succeed_tx("1")
   local_state_reference_spend(blake2b_224("local_state_id"), tx) && local_state_reference_mint(
-    LocalStateReferenceData("", [""]),
+    [],
     tx,
   )
 }
@@ -193,7 +221,7 @@ test local_state_reference_burn_mint_succeed() {
       inputs: [],
       outputs: [],
     }
-  local_state_reference_mint(LocalStateReferenceData("", [""]), tx)
+  local_state_reference_mint([], tx)
 }
 
 // just burning local state reference fail transaction
@@ -205,10 +233,7 @@ test local_state_reference_burn_mint_negate() fail {
       inputs: [],
       outputs: [],
     }
-  local_state_reference_mint(
-    LocalStateReferenceData("", [""]),
-    Transaction { ..tx, mint: negate(tx.mint) },
-  )
+  local_state_reference_mint([], Transaction { ..tx, mint: negate(tx.mint) })
 }
 
 // spending and burning local state reference fail transaction
@@ -216,7 +241,7 @@ test local_state_reference_burn_mint_negate() fail {
 test local_state_reference_burn_fail1_nft() fail {
   let tx = local_state_reference_spend_burn_succeed_tx("1")
   local_state_reference_spend(blake2b_224("local_state_id1"), tx) && local_state_reference_mint(
-    LocalStateReferenceData("", [""]),
+    [],
     tx,
   )
 }
@@ -230,7 +255,7 @@ test local_state_reference_burn_fail2_output() fail {
       outputs: create_local_state_reference_output(["2"]),
     }
   local_state_reference_spend(blake2b_224("local_state_id1"), tx) && local_state_reference_mint(
-    LocalStateReferenceData("", [""]),
+    [],
     tx,
   )
 }

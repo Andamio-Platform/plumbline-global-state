@@ -1,13 +1,13 @@
 use aiken/builtin.{blake2b_256, fst_pair, snd_pair}
 use aiken/collection/list
-use aiken/collection/pairs.{has_key}
+use aiken/collection/pairs
 use aiken/primitive/bytearray
 use cardano/assets.{PolicyId}
 use cardano/transaction.{InlineDatum, Input, Redeemer, ScriptPurpose, Spend}
 use plumbline/plumb_input.{find_input_with_single_token}
 use plumbline/plumb_value.{create_100}
 use plumbline/types/global_state.{
-  BurnLocalState, GlobalStateDatum, LocalStateInformation, MintLocalState,
+  BurnLocalState, GlobalStateDatum, MintLocalState,
 }
 
 /// Returns a BLAKE2b-256 hash of the local state by combining the state data hash
@@ -49,59 +49,7 @@ pub fn at_validate(
 }
 
 /// Create a new global state datum with local state token minted. 
-pub fn create_new_gs_dat_mint(
-  gs_dat: GlobalStateDatum,
-  ls_info: LocalStateInformation,
-) -> GlobalStateDatum {
-  let ls_id = ls_info.local_state_id
-  let ls_cs = ls_info.local_state_cs
-  let gs_data = gs_dat.local_state_data
-  GlobalStateDatum {
-    ..gs_dat,
-    local_state_data: if ls_info.local_state_index > -1 {
-      let ls_data_hash = ls_info.local_state_data_hash
-      list.push(
-        at_validate(
-          gs_data,
-          [],
-          ls_id,
-          hash_local_state(ls_data_hash, ""),
-          ls_info.local_state_index,
-        ),
-        Pair(ls_id, hash_local_state(ls_data_hash, ls_cs)),
-      )
-    } else {
-      if has_key(gs_data, ls_id) {
-        fail
-      } else {
-        list.push(gs_data, Pair(ls_id, hash_local_state("", ls_cs)))
-      }
-    },
-  }
-}
-
 /// Updates global state datum with new data hash for a local state. 
-pub fn create_new_gs_dat_burn(
-  gs_dat: GlobalStateDatum,
-  ls_info: LocalStateInformation,
-  new_data: ByteArray,
-) -> GlobalStateDatum {
-  let ls_id = ls_info.local_state_id
-  GlobalStateDatum {
-    ..gs_dat,
-    local_state_data: list.push(
-      at_validate(
-        gs_dat.local_state_data,
-        [],
-        ls_id,
-        hash_local_state(ls_info.local_state_data_hash, ls_info.local_state_cs),
-        ls_info.local_state_index,
-      ),
-      Pair(ls_id, hash_local_state(new_data, "")),
-    ),
-  }
-}
-
 /// Deletes local state if not minted from global state datum.
 pub fn create_new_gs_dat_delete(
   gs_dat: GlobalStateDatum,
@@ -121,23 +69,48 @@ pub fn create_new_gs_dat_delete(
   }
 }
 
+pub fn get_global_state_red(
+  inputs: List<Input>,
+  redeemers: Pairs<ScriptPurpose, Redeemer>,
+  global_cs: PolicyId,
+  alias: ByteArray,
+) -> Data {
+  expect Some(global_state_redeemer) =
+    pairs.get_first(
+      redeemers,
+      Spend(
+        find_input_with_single_token(inputs, global_cs, create_100(alias)).output_reference,
+      ),
+    )
+  global_state_redeemer
+}
+
 /// Function to check if given local states exist in global state and `LocalStateInformation` is used
 /// Only works for minting local state.
-pub fn validate_global_state_mint_ls(
+pub fn validate_global_state_mint_ls_with_prereqs(
   inputs: List<Input>,
   redeemers: Pairs<ScriptPurpose, Redeemer>,
   global_cs: PolicyId,
   alias: ByteArray,
   local_state_data: Pairs<PolicyId, ByteArray>,
-  ls_info: LocalStateInformation,
+  local_state_id: PolicyId,
+  local_state_index: Int,
+  local_state_data_hash: ByteArray,
+  local_state_cs: PolicyId,
 ) -> Bool {
   let global_state_input =
     find_input_with_single_token(inputs, global_cs, create_100(alias))
   expect InlineDatum(global_state_dat) = global_state_input.output.datum
   expect global_state_datum: GlobalStateDatum = global_state_dat
-  expect Some(global_state_redeemer) =
-    pairs.get_first(redeemers, Spend(global_state_input.output_reference))
-  let msl: Data = MintLocalState(ls_info)
+  let global_state_redeemer =
+    get_global_state_red(inputs, redeemers, global_cs, alias)
+  let msl: Data =
+    MintLocalState(
+      local_state_id,
+      local_state_index,
+      local_state_data_hash,
+      local_state_cs,
+    )
   list.all(
     local_state_data,
     fn(ls_data) {
@@ -149,6 +122,24 @@ pub fn validate_global_state_mint_ls(
   )? && (global_state_redeemer == msl)?
 }
 
+pub fn validate_global_state_mint_ls_no_prereqs(
+  inputs: List<Input>,
+  redeemers: Pairs<ScriptPurpose, Redeemer>,
+  global_cs: PolicyId,
+  alias: ByteArray,
+  ls_id: PolicyId,
+  ls_data_hash: ByteArray,
+  ls_cs: PolicyId,
+) -> Bool {
+  expect MintLocalState {
+    local_state_id,
+    local_state_data_hash,
+    local_state_cs,
+    ..
+  } = get_global_state_red(inputs, redeemers, global_cs, alias)
+  (ls_id == local_state_id)? && (ls_data_hash == local_state_data_hash)? && (ls_cs == local_state_cs)?
+}
+
 /// Function to validate correct redeemer is used for global state burn local state.
 /// Only works for burning local state.
 pub fn validate_global_state_burn_ls(
@@ -158,17 +149,9 @@ pub fn validate_global_state_burn_ls(
   alias: ByteArray,
   ls_id: PolicyId,
   ls_cs: PolicyId,
-  /// will be new local state atttached in global state
   new_state_hash: ByteArray,
 ) -> Bool {
-  expect Some(global_state_redeemer) =
-    pairs.get_first(
-      redeemers,
-      Spend(
-        find_input_with_single_token(inputs, global_cs, create_100(alias)).output_reference,
-      ),
-    )
-  expect BurnLocalState(local_state_info, new_data_hash_red) =
-    global_state_redeemer
-  (new_state_hash == new_data_hash_red)? && (ls_id == local_state_info.local_state_id)? && (ls_cs == local_state_info.local_state_cs)?
+  expect BurnLocalState { local_state_id, local_state_cs, new_data_hash, .. } =
+    get_global_state_red(inputs, redeemers, global_cs, alias)
+  (new_state_hash == new_data_hash)? && (ls_id == local_state_id)? && (ls_cs == local_state_cs)?
 }

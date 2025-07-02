@@ -1,4 +1,4 @@
-use aiken/builtin.{blake2b_224, blake2b_256}
+use aiken/builtin.{blake2b_224}
 use aiken/cbor.{serialise}
 use aiken/collection/list.{drop, map, push}
 use cardano/address.{Script}
@@ -6,6 +6,7 @@ use cardano/assets.{from_asset}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction, placeholder}
 use global/init_global_state_obs as init_obs
 use plumbline.{create_100}
+use plumbline/plumb_bytearray.{serialise_hash_list}
 use plumbline/plumb_global_state.{hash_local_state}
 use plumbline/types/global_state.{GlobalStateDatum}
 use plumbproof.{
@@ -136,7 +137,7 @@ fn create_gs_dat_v1(
       fn(n) {
         Pair(
           n.local_state_id,
-          hash_local_state(blake2b_256(serialise(n.local_state_data)), ""),
+          hash_local_state(serialise_hash_list(n.local_state_data), ""),
         )
       },
     ),

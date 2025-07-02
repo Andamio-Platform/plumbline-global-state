@@ -2,22 +2,21 @@
 //// NOT FOR PRODUCTION !!!
 
 use aiken/builtin.{fst_pair, snd_pair}
-use aiken/cbor.{serialise}
 use aiken/collection/list
-use aiken/crypto.{blake2b_224, blake2b_256}
+use aiken/crypto.{blake2b_224}
 use cardano/address.{from_script}
 use cardano/assets.{PolicyId, from_asset}
 use cardano/transaction.{
-  InlineDatum, Input, Output, OutputReference, Spend, Transaction, find_input,
-  placeholder,
+  InlineDatum, Input, Output, OutputReference, Spend, Transaction, placeholder,
 }
 use plumbline.{
-  get_script_hash_from_address, hash_local_state, policy_id_present_in_outputs,
-  quantity_is_one, single_name_of_policy_id, validate_global_state_burn_ls,
-  validate_global_state_mint_ls,
+  find_input, get_script_hash_from_address, hash_local_state,
+  policy_id_present_in_outputs, quantity_is_one, serialise_hash_list,
+  single_name_of_policy_id, validate_global_state_burn_ls,
+  validate_global_state_mint_ls_with_prereqs,
 }
 use plumbline/types/global_state.{
-  BurnLocalState, GlobalStateDatum, LocalStateInformation, MintLocalState,
+  BurnLocalState, GlobalStateDatum, MintLocalState,
 }
 use plumbproof.{
   create_empty_gs_dat, create_global_output, create_min_ada_token_value,
@@ -51,7 +50,7 @@ validator simple_local_state(
     when redeemer is {
       Issue(alias, new_state) -> {
         let Transaction { inputs, outputs, .. } = tx
-        expect Some(own_input) = find_input(inputs, output_reference)
+        let own_input = find_input(inputs, output_reference)
         let own_policy_id =
           get_script_hash_from_address(own_input.output.address)
         policy_id_present_in_outputs(outputs, local_state_id)? && list.any(
@@ -67,7 +66,7 @@ validator simple_local_state(
       }
       Burn(alias) -> {
         let Transaction { inputs, mint, redeemers, .. } = tx
-        expect Some(own_input) = find_input(inputs, output_reference)
+        let own_input = find_input(inputs, output_reference)
         expect Some(state) = datum_opt
         let own_policy_id =
           get_script_hash_from_address(own_input.output.address)
@@ -78,7 +77,7 @@ validator simple_local_state(
           alias,
           local_state_id,
           own_policy_id,
-          blake2b_256(serialise(state)),
+          serialise_hash_list(state),
         )
       }
       _ -> fail
@@ -96,29 +95,27 @@ validator simple_local_state(
               Pair(
                 lsd.local_state_id,
                 hash_local_state(
-                  blake2b_256(serialise(lsd.local_state_data_clear)),
+                  serialise_hash_list(lsd.local_state_data_clear),
                   lsd.local_state_cs,
                 ),
               )
             },
           )
 
-        validate_global_state_mint_ls(
+        validate_global_state_mint_ls_with_prereqs(
           inputs,
           redeemers,
           global_cs,
           alias,
           global_state_data_to_check,
-          LocalStateInformation(
-            local_state_id,
-            ls_index,
-            if state == [] {
-              ""
-            } else {
-              blake2b_256(serialise(state))
-            },
-            policy_id,
-          ),
+          local_state_id,
+          ls_index,
+          if state == [] {
+            ""
+          } else {
+            serialise_hash_list(state)
+          },
+          policy_id,
         ) && single_name_of_policy_id(mint, policy_id, alias, 1)? && list.all(
           prerequisits,
           fn(prereq) {
@@ -166,7 +163,7 @@ const mint_local_state_succeed_tx =
   Transaction { ..placeholder, mint: from_asset(ls_cs, alias, 1) }
 
 test simple_local_state_mint_succeed_empty() {
-  let red: Data = MintLocalState(LocalStateInformation(ls_id, -1, "", ls_cs))
+  let red: Data = MintLocalState(ls_id, -1, "", ls_cs)
   simple_local_state.mint(
     global_cs,
     ls_id,
@@ -194,7 +191,7 @@ test simple_local_state_mint_succeed_empty() {
 }
 
 test simple_local_state_mint_succeed_prereq() {
-  let red: Data = MintLocalState(LocalStateInformation(ls_id, 0, "", ls_cs))
+  let red: Data = MintLocalState(ls_id, 0, "", ls_cs)
   simple_local_state.mint(
     global_cs,
     ls_id,
@@ -219,7 +216,7 @@ test simple_local_state_mint_succeed_prereq() {
                 Pair(
                   blake2b_224("id1"),
                   hash_local_state(
-                    blake2b_256(serialise(["1.1"])),
+                    serialise_hash_list(["1.1"]),
                     blake2b_224("cs1"),
                   ),
                 ),
@@ -241,10 +238,7 @@ test simple_local_state_mint_succeed_prereq() {
 }
 
 test simple_local_state_mint_succeed_with_state() {
-  let red: Data =
-    MintLocalState(
-      LocalStateInformation(ls_id, 0, blake2b_256(serialise(["0"])), ls_cs),
-    )
+  let red: Data = MintLocalState(ls_id, 0, serialise_hash_list(["0"]), ls_cs)
   simple_local_state.mint(
     global_cs,
     ls_id,
@@ -269,11 +263,11 @@ test simple_local_state_mint_succeed_with_state() {
                 Pair(
                   blake2b_224("id1"),
                   hash_local_state(
-                    blake2b_256(serialise(["1.1"])),
+                    serialise_hash_list(["1.1"]),
                     blake2b_224("cs1"),
                   ),
                 ),
-                Pair(ls_id, hash_local_state(blake2b_256(serialise(["0"])), "")),
+                Pair(ls_id, hash_local_state(serialise_hash_list(["0"]), "")),
               ],
             },
           ),
@@ -292,10 +286,7 @@ test simple_local_state_mint_succeed_with_state() {
 }
 
 test simple_local_state_succeed_with_multiple_state() {
-  let red: Data =
-    MintLocalState(
-      LocalStateInformation(ls_id, 0, blake2b_256(serialise(["0"])), ls_cs),
-    )
+  let red: Data = MintLocalState(ls_id, 0, serialise_hash_list(["0"]), ls_cs)
   simple_local_state.mint(
     global_cs,
     ls_id,
@@ -326,15 +317,15 @@ test simple_local_state_succeed_with_multiple_state() {
                 Pair(
                   blake2b_224("id1"),
                   hash_local_state(
-                    blake2b_256(serialise(["1.1"])),
+                    serialise_hash_list(["1.1"]),
                     blake2b_224("cs1"),
                   ),
                 ),
                 Pair(
                   blake2b_224("id2"),
-                  hash_local_state(blake2b_256(serialise(["2.1", "2.2"])), ""),
+                  hash_local_state(serialise_hash_list(["2.1", "2.2"]), ""),
                 ),
-                Pair(ls_id, hash_local_state(blake2b_256(serialise(["0"])), "")),
+                Pair(ls_id, hash_local_state(serialise_hash_list(["0"]), "")),
               ],
             },
           ),
@@ -390,8 +381,11 @@ test simple_local_state_new_state_succeed() {
 test simple_local_state_burn_succeed() {
   let red: Data =
     BurnLocalState(
-      LocalStateInformation(ls_id, 0, blake2b_256(serialise([])), ls_cs),
-      blake2b_256(serialise(["1", "2", "3"])),
+      ls_id,
+      0,
+      serialise_hash_list([]),
+      ls_cs,
+      serialise_hash_list(["1", "2", "3"]),
     )
 
   simple_local_state.spend(

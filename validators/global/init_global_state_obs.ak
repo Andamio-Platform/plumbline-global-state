@@ -1,12 +1,11 @@
 //// @hidden
 
-use aiken/cbor.{serialise}
 use aiken/collection/list.{any, map}
-use aiken/crypto.{blake2b_256}
 use cardano/address.{Address, Credential}
 use cardano/assets.{PolicyId}
 use cardano/certificate.{Certificate, RegisterCredential}
 use cardano/transaction.{InlineDatum, Transaction}
+use plumbline/plumb_bytearray.{serialise_hash_list}
 use plumbline/plumb_global_state.{hash_local_state}
 use plumbline/plumb_input.{find_input_with_single_token}
 use plumbline/plumb_value.{create_100, quantity_is_one}
@@ -21,7 +20,6 @@ validator init_global_state_obs_v2(
 ) {
   withdraw(redeemer: ByteArray, _account: Credential, tx: Transaction) {
     let Transaction { inputs, outputs, mint, .. } = tx
-    // datum validation and update from old global state
     let tn_100 = create_100(redeemer)
     let global_state_datum =
       if quantity_is_one(mint, global_cs, tn_100) {
@@ -43,7 +41,7 @@ validator init_global_state_obs_v2(
               if minted == False {
                 Pair(
                   local_state_id,
-                  hash_local_state(blake2b_256(serialise(local_state_data)), ""),
+                  hash_local_state(serialise_hash_list(local_state_data), ""),
                 )
               } else {
                 fail
