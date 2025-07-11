@@ -43,7 +43,7 @@ test init_obs_withdraw_empty_succeed() {
 }
 
 // withdraw fail
-// trying to nitiate with a state
+// trying to initiate with a state
 test init_obs_withdraw_empty_fail1_datum() fail {
   let user_name = "user_name"
   init_gs_obs_withdraw(

@@ -10,12 +10,12 @@ use plumbline/plumb_output.{policy_id_present_in_outputs}
 use plumbline/plumb_value.{
   quantity_is_one, single_name_of_policy_id, two_token_value,
 }
-use plumbline/types/local_state_reference_data.{LocalStateReferenceData}
+use plumbline/types/local_state_registration_data.{LocalStateRegistrationData}
 
-// validator where local state reference scripts are stored to be used in a global state.
-// Every local state reference is identified by a fungible token and differentiated by the policy in the datum.
+// Validator where local state reference scripts are stored to be used in a global state.
+// Every local state reference token stands for a local state token which is identified by a policy id in the datum.
 // two actions, minting and burning
-validator local_state_reference(
+validator local_state_registration(
   stake_cred: StakeCredential,
   state_token_name: AssetName,
 ) {
@@ -26,34 +26,37 @@ validator local_state_reference(
     tx: Transaction,
   ) {
     let Transaction { inputs, outputs, .. } = tx
-    let own_input = find_input(inputs, output_reference)
-    let own_policy = get_script_hash_from_address(own_input.output.address)
+    let own_policy =
+      get_script_hash_from_address(
+        find_input(inputs, output_reference).output.address,
+      )
     expect Some(datum) = datum_opt
-    policy_id_present_in_outputs(outputs, datum)? && (policy_id_present_in_outputs(
+    policy_id_present_in_outputs(outputs, datum)? && (!policy_id_present_in_outputs(
       outputs,
       own_policy,
-    ) == False)?
+    ))?
   }
 
   mint(
-    lsrd: List<LocalStateReferenceData>,
+    lsrd: List<LocalStateRegistrationData>,
     policy_id: PolicyId,
     tx: Transaction,
   ) {
-    if length(lsrd) > 0 {
+    let lsrd_len = length(lsrd)
+    if lsrd_len > 0 {
       let own_addr = Address(Script(policy_id), Some(stake_cred))
       all(
         lsrd,
-        fn(LocalStateReferenceData { ls_id, ls_reference_script_hashes }) {
+        fn(LocalStateRegistrationData { ls_id, ls_reference_script_hash }) {
+          let ref_scr = Some(ls_reference_script_hash)
+          let ref_datum = InlineDatum(ls_id)
           any(
             tx.outputs,
             fn(output) {
               let value = output.value
-              quantity_is_one(value, policy_id, state_token_name) && (output.datum == InlineDatum(
-                ls_id,
-              ))? && (output.address == own_addr)? && two_token_value(value)? && output.reference_script == Some(
-                ls_reference_script_hashes,
-              )
+              quantity_is_one(value, policy_id, state_token_name) && (output.datum == ref_datum)? && (output.address == own_addr)? && two_token_value(
+                value,
+              )? && output.reference_script == ref_scr
             },
           )? && policy_id_present_in_outputs(tx.outputs, ls_id)?
         },
@@ -61,7 +64,7 @@ validator local_state_reference(
         tx.mint,
         policy_id,
         state_token_name,
-        length(lsrd),
+        lsrd_len,
       )?
     } else {
       (quantity_of(tx.mint, policy_id, state_token_name) < 0)?

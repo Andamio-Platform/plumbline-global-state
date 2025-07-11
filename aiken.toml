@@ -6,18 +6,13 @@ license = "Apache-2.0"
 description = "Aiken contracts used by the andamio protocol."
 
 [repository]
-user = "Platform"
+user = "Andamio-Platform"
 project = "plumbline-global-state"
 platform = "github"
 
 [[dependencies]]
 name = "aiken-lang/stdlib"
 version = "v2.2.0"
-source = "github"
-
-[[dependencies]]
-name = "aiken-lang/fuzz"
-version = "v2.1.1"
 source = "github"
 
 [config]

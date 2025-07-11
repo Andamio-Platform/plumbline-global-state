@@ -6,6 +6,8 @@ use plumbline/plumb_output.{
 }
 use plumbline/plumb_value.{quantity_is_one}
 
+/// Find an input which has a specific output reference.
+/// Fails if no input found.
 pub fn find_input(
   inputs: List<Input>,
   output_reference: OutputReference,

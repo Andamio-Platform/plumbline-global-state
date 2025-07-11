@@ -26,51 +26,62 @@ fn create_global_input(alias: ByteArray, dat: GlobalStateDatum) -> Input {
   }
 }
 
+// add local state to global state datum
+fn create_gs_dat(
+  gs_dat: GlobalStateDatum,
+  ls_id: PolicyId,
+  creds: ByteArray,
+) -> GlobalStateDatum {
+  let gs_datum =
+    GlobalStateDatum {
+      ..gs_dat,
+      local_state_data: push(gs_dat.local_state_data, Pair(ls_id, creds)),
+    }
+  gs_datum
+}
+
+const user_name = "user_name"
+
+const simple_gs_dat =
+  create_gs_dat(
+    create_empty_gs_dat(user_name),
+    blake2b_224("local_state_id"),
+    hash_local_state("", blake2b_224("local_state_cs")),
+  )
+
+// validate_input_output
 // create input and output to succeed validate_input_and_output
 fn validate_input_and_output_succeed_lists(
-  user_name: ByteArray,
+  user_name_self: ByteArray,
 ) -> Pair<List<Input>, List<Output>> {
   let inputs =
     [
-      input_222(user_name),
-      create_global_input(user_name, create_empty_gs_dat(user_name)),
+      input_222(user_name_self),
+      create_global_input(user_name_self, create_empty_gs_dat(user_name_self)),
     ]
   let outputs =
     [
-      create_global_output(
-        user_name,
-        create_gs_dat(
-          create_empty_gs_dat(user_name),
-          blake2b_224("local_state_id"),
-          hash_local_state("", blake2b_224("local_state_cs")),
-        ),
-      ),
-      output_222(user_name),
+      create_global_output(user_name_self, simple_gs_dat),
+      output_222(user_name_self),
     ]
   Pair(inputs, outputs)
 }
 
 // validate_input_and_output succees test
 test validate_input_and_output_succeed() {
-  let user_name = "user_name"
   let Pair(inputs, outputs) = validate_input_and_output_succeed_lists(user_name)
   gs.validate_input_and_output(
     inputs,
     mock_utxo_ref("0", 0),
     outputs,
     global_cs,
-    create_gs_dat(
-      create_empty_gs_dat(user_name),
-      blake2b_224("local_state_id"),
-      hash_local_state("", blake2b_224("local_state_cs")),
-    ),
+    simple_gs_dat,
   )
 }
 
 // validate_input_and_output fail test
 // missing token from input
 test validate_input_and_output_fail1_input() fail {
-  let user_name = "user_name"
   let Pair(inputs, outputs) = validate_input_and_output_succeed_lists(user_name)
   gs.validate_input_and_output(
     push(
@@ -80,36 +91,26 @@ test validate_input_and_output_fail1_input() fail {
     mock_utxo_ref("0", 0),
     outputs,
     global_cs,
-    create_gs_dat(
-      create_empty_gs_dat(user_name),
-      blake2b_224("local_state_id"),
-      hash_local_state("", blake2b_224("local_state_cs")),
-    ),
+    simple_gs_dat,
   )
 }
 
 // validate_input_and_output fail test
 // wrong 222 token
 test validate_input_and_output_fail2_222() fail {
-  let user_name = "user_name"
   let Pair(inputs, outputs) = validate_input_and_output_succeed_lists(user_name)
   gs.validate_input_and_output(
     push(drop(inputs, 1), input_222("user_name1")),
     mock_utxo_ref("0", 0),
     push(take(outputs, 1), output_222("user_name1")),
     global_cs,
-    create_gs_dat(
-      create_empty_gs_dat(user_name),
-      blake2b_224("local_state_id"),
-      hash_local_state("", blake2b_224("local_state_cs")),
-    ),
+    simple_gs_dat,
   )
 }
 
 // validate_input_and_output fail test
 // wrong output address
 test validate_input_and_output_fail3_output_addr() fail {
-  let user_name = "user_name"
   let Pair(inputs, outputs) = validate_input_and_output_succeed_lists(user_name)
   gs.validate_input_and_output(
     inputs,
@@ -119,29 +120,18 @@ test validate_input_and_output_fail3_output_addr() fail {
       Output {
         address: script_address_stake_cred("global_state_addr_v1"),
         value: create_min_ada_token_value(global_cs, create_100(user_name), 1),
-        datum: InlineDatum(
-          create_gs_dat(
-            create_empty_gs_dat(user_name),
-            blake2b_224("local_state_id"),
-            hash_local_state("", blake2b_224("local_state_cs")),
-          ),
-        ),
+        datum: InlineDatum(simple_gs_dat),
         reference_script: None,
       },
     ),
     global_cs,
-    create_gs_dat(
-      create_empty_gs_dat(user_name),
-      blake2b_224("local_state_id"),
-      hash_local_state("", blake2b_224("local_state_cs")),
-    ),
+    simple_gs_dat,
   )
 }
 
 // validate_input_and_output fail test
 // wrong output datum
 test validate_input_and_output_fail4_output_datum() fail {
-  let user_name = "user_name"
   let Pair(inputs, outputs) = validate_input_and_output_succeed_lists(user_name)
   gs.validate_input_and_output(
     inputs,
@@ -156,18 +146,13 @@ test validate_input_and_output_fail4_output_datum() fail {
       },
     ),
     global_cs,
-    create_gs_dat(
-      create_empty_gs_dat(user_name),
-      blake2b_224("local_state_id"),
-      hash_local_state("", blake2b_224("local_state_cs")),
-    ),
+    simple_gs_dat,
   )
 }
 
 // validate_input_and_output fail test
 // wrong output value
 test validate_input_and_output_fail5_output_value() fail {
-  let user_name = "user_name"
   let Pair(inputs, outputs) = validate_input_and_output_succeed_lists(user_name)
   gs.validate_input_and_output(
     inputs,
@@ -177,37 +162,73 @@ test validate_input_and_output_fail5_output_value() fail {
       Output {
         address: global_state_addr,
         value: create_min_ada_token_value(global_cs, user_name, 1),
-        datum: InlineDatum(
-          create_gs_dat(
-            create_empty_gs_dat(user_name),
-            blake2b_224("local_state_id"),
-            hash_local_state("", blake2b_224("local_state_cs")),
-          ),
-        ),
+        datum: InlineDatum(simple_gs_dat),
         reference_script: None,
       },
     ),
     global_cs,
-    create_gs_dat(
-      create_empty_gs_dat(user_name),
-      blake2b_224("local_state_id"),
-      hash_local_state("", blake2b_224("local_state_cs")),
-    ),
+    simple_gs_dat,
   )
 }
 
-// add local state to global state datum
-fn create_gs_dat(
-  gs_dat: GlobalStateDatum,
-  ls_id: PolicyId,
-  creds: ByteArray,
-) -> GlobalStateDatum {
-  let gs_datum =
-    GlobalStateDatum {
-      ..gs_dat,
-      local_state_data: push(gs_dat.local_state_data, Pair(ls_id, creds)),
-    }
-  gs_datum
+// create_gs_datum_mint
+test create_gs_datum_mint_succeed1() {
+  gs.create_gs_datum_mint([Pair("cs1", "cs1_data")], "cs2", -1, "", "cs2_ls") == [
+    Pair("cs2", hash_local_state("", "cs2_ls")),
+    Pair("cs1", "cs1_data"),
+  ]
+}
+
+test create_gs_datum_mint_succeed2() {
+  gs.create_gs_datum_mint(
+    [Pair("cs1", "cs1_data"), Pair("cs2", hash_local_state("cs2_data", ""))],
+    "cs2",
+    1,
+    "cs2_data",
+    "cs2_ls",
+  ) == [
+    Pair("cs2", hash_local_state("cs2_data", "cs2_ls")),
+    Pair("cs1", "cs1_data"),
+  ]
+}
+
+test create_gs_datum_mint_fail1_index1() fail {
+  gs.create_gs_datum_mint(
+    [Pair("cs1", "cs1_data"), Pair("cs2", hash_local_state("cs2_data", ""))],
+    "cs2",
+    0,
+    "cs2_data",
+    "cs2_ls",
+  ) == [
+    Pair("cs2", hash_local_state("cs2_data", "cs2_ls")),
+    Pair("cs1", "cs1_data"),
+  ]
+}
+
+test create_gs_datum_mint_fail2_index2() fail {
+  gs.create_gs_datum_mint(
+    [Pair("cs1", "cs1_data"), Pair("cs2", hash_local_state("cs2_data", ""))],
+    "cs2",
+    -1,
+    "cs2_data",
+    "cs2_ls",
+  ) == [
+    Pair("cs2", hash_local_state("cs2_data", "cs2_ls")),
+    Pair("cs1", "cs1_data"),
+  ]
+}
+
+test create_gs_datum_mint_fail3_data() fail {
+  gs.create_gs_datum_mint(
+    [Pair("cs1", "cs1_data"), Pair("cs2", hash_local_state("cs2_data", ""))],
+    "cs2",
+    1,
+    "",
+    "cs2_ls",
+  ) == [
+    Pair("cs2", hash_local_state("cs2_data", "cs2_ls")),
+    Pair("cs1", "cs1_data"),
+  ]
 }
 
 const index_ref_cs = blake2b_224("index_ref_cs")
@@ -259,7 +280,6 @@ fn global_state_spend_mint_success_tx(user_name: ByteArray) -> Transaction {
 
 // global state mint succeed
 test global_state_spend_mint_success1_empty() {
-  let user_name = "user_name"
   global_state_spend(
     create_empty_gs_dat(user_name),
     MintLocalState(
@@ -272,10 +292,11 @@ test global_state_spend_mint_success1_empty() {
   )
 }
 
+// global state mint succeed
+
 // global state mint fail
 // no local state minting
 test global_state_spend_mint_fail1_minting() fail {
-  let user_name = "user_name"
   global_state_spend(
     create_empty_gs_dat(user_name),
     MintLocalState(
@@ -291,7 +312,6 @@ test global_state_spend_mint_fail1_minting() fail {
 // global state mint fail
 // no reference script
 test global_state_spend_mint_fail2_reference() fail {
-  let user_name = "user_name"
   global_state_spend(
     create_empty_gs_dat(user_name),
     MintLocalState(
@@ -313,14 +333,7 @@ fn global_state_spend_burn_success_tx(user_name: ByteArray) -> Transaction {
     ..placeholder,
     inputs: [
       input_222(user_name),
-      create_global_input(
-        user_name,
-        create_gs_dat(
-          create_empty_gs_dat(user_name),
-          blake2b_224("local_state_id"),
-          hash_local_state("", blake2b_224("local_state_cs")),
-        ),
-      ),
+      create_global_input(user_name, simple_gs_dat),
     ],
     outputs: [
       create_global_output(
@@ -339,14 +352,8 @@ fn global_state_spend_burn_success_tx(user_name: ByteArray) -> Transaction {
 
 // global state burn local state succeed test
 test global_state_spend_burn_success1_empty() {
-  let user_name = "user_name"
-
   global_state_spend(
-    create_gs_dat(
-      create_empty_gs_dat(user_name),
-      blake2b_224("local_state_id"),
-      hash_local_state("", blake2b_224("local_state_cs")),
-    ),
+    simple_gs_dat,
     BurnLocalState(
       blake2b_224("local_state_id"),
       0,
@@ -361,14 +368,8 @@ test global_state_spend_burn_success1_empty() {
 // global state burn local state fail test
 // no burning of local state token
 test global_state_spend_burn_fail1_minting() fail {
-  let user_name = "user_name"
-
   global_state_spend(
-    create_gs_dat(
-      create_empty_gs_dat(user_name),
-      blake2b_224("local_state_id"),
-      hash_local_state("", blake2b_224("local_state_cs")),
-    ),
+    simple_gs_dat,
     BurnLocalState(
       blake2b_224("local_state_id"),
       -1,
@@ -403,9 +404,7 @@ fn global_state_spend_delete_success_tx(user_name: ByteArray) -> Transaction {
 }
 
 // global state delete local state succeed test
-test global_state_spend_delete_success1_empty() {
-  let user_name = "user_name"
-
+test global_state_spend_delete_success1() {
   global_state_spend(
     create_gs_dat(
       create_empty_gs_dat(user_name),
@@ -417,6 +416,31 @@ test global_state_spend_delete_success1_empty() {
   )
 }
 
+test global_state_spend_delete_fail1_not_deleted() fail {
+  global_state_spend(
+    create_gs_dat(
+      create_empty_gs_dat(user_name),
+      blake2b_224("local_state_id"),
+      hash_local_state("", ""),
+    ),
+    DeleteState(blake2b_224("local_state_id"), "", 0),
+    Transaction {
+      ..global_state_spend_delete_success_tx(user_name),
+      outputs: [
+        create_global_output(
+          user_name,
+          create_gs_dat(
+            create_empty_gs_dat(user_name),
+            blake2b_224("local_state_id"),
+            hash_local_state("", ""),
+          ),
+        ),
+        output_222(user_name),
+      ],
+    },
+  )
+}
+
 const init_global_obs_sh = blake2b_224("init_obs_sh")
 
 fn global_state_spend_move_success_tx(user_name: ByteArray) -> Transaction {
@@ -425,14 +449,7 @@ fn global_state_spend_move_success_tx(user_name: ByteArray) -> Transaction {
     ..placeholder,
     inputs: [
       input_222(user_name),
-      create_global_input(
-        user_name,
-        create_gs_dat(
-          create_empty_gs_dat(user_name),
-          blake2b_224("local_state_id"),
-          hash_local_state("", blake2b_224("local_state_cs")),
-        ),
-      ),
+      create_global_input(user_name, simple_gs_dat),
     ],
     reference_inputs: [
       Input(
@@ -457,15 +474,20 @@ fn global_state_spend_move_success_tx(user_name: ByteArray) -> Transaction {
 }
 
 test global_state_spend_move_success1_empty() {
-  let user_name = "user_name"
-
   global_state_spend(
-    create_gs_dat(
-      create_empty_gs_dat(user_name),
-      blake2b_224("local_state_id"),
-      hash_local_state("", blake2b_224("local_state_cs")),
-    ),
+    simple_gs_dat,
     MoveState(init_global_obs_sh),
     global_state_spend_move_success_tx(user_name),
+  )
+}
+
+test global_state_spend_move_fail1_wrong_obs() fail {
+  global_state_spend(
+    simple_gs_dat,
+    MoveState(init_global_obs_sh),
+    Transaction {
+      ..global_state_spend_move_success_tx(user_name),
+      withdrawals: [Pair(Script("init_global_obs_sh"), 0)],
+    },
   )
 }
