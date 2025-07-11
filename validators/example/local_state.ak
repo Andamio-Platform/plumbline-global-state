@@ -8,12 +8,15 @@ use cardano/assets.{PolicyId}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
-use plumbline.{
-  find_input, get_script_hash_from_address, hash_local_state,
-  policy_id_present_in_outputs, quantity_is_one, serialise_hash_list,
-  single_name_of_policy_id, validate_global_state_burn_ls,
+use plumbline/plumb_address.{get_script_hash_from_address}
+use plumbline/plumb_bytearray.{serialise_hash_list}
+use plumbline/plumb_global_state.{
+  hash_local_state, validate_global_state_burn_ls,
   validate_global_state_mint_ls_with_prereqs,
 }
+use plumbline/plumb_input.{find_input}
+use plumbline/plumb_output.{policy_id_present_in_outputs}
+use plumbline/plumb_value.{quantity_is_one, single_name_of_policy_id}
 
 pub type LocalStateData {
   local_state_id: PolicyId,

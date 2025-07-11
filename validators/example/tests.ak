@@ -6,7 +6,8 @@ use cardano/address.{from_script}
 use cardano/assets.{from_asset}
 use cardano/transaction.{InlineDatum, Input, Spend, Transaction, placeholder}
 use example/local_state as simple_local_state
-use plumbline.{hash_local_state, serialise_hash_list}
+use plumbline/plumb_bytearray.{serialise_hash_list}
+use plumbline/plumb_global_state.{hash_local_state}
 use plumbline/types/global_state.{
   BurnLocalState, GlobalStateDatum, MintLocalState,
 }

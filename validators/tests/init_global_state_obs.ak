@@ -5,9 +5,9 @@ use cardano/address.{Script}
 use cardano/assets.{from_asset}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction, placeholder}
 use global/init_global_state_obs as init_obs
-use plumbline.{create_100}
 use plumbline/plumb_bytearray.{serialise_hash_list}
 use plumbline/plumb_global_state.{hash_local_state}
+use plumbline/plumb_value.{create_100}
 use plumbline/types/global_state.{GlobalStateDatum}
 use plumbproof.{
   create_empty_gs_dat, create_global_output, create_min_ada_token_value,
