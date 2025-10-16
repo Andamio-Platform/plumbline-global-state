@@ -21,7 +21,7 @@ use plumbline/plumb_redeemers.{
   get_single_token_spend_redeemer_by_constructor,
 }
 use plumbline/plumb_value.{
-  create_100, flat_val_paid, flat_val_to_value, geq_value, quantity_is_one,
+  create_global_tn, flat_val_paid, flat_val_to_value, geq_value, quantity_is_one,
   single_name_of_policy_id, substract_value, two_token_value,
 }
 use plumbline/types/flat_value.{FlatValue}
@@ -68,7 +68,7 @@ const global_100_input =
       mock_pub_key_address("a"),
       create_min_ada_token_value(
         blake2b_224("global_cs"),
-        create_100("alias"),
+        create_global_tn("alias"),
         1,
       ),
       InlineDatum(

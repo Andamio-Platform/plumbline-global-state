@@ -9,7 +9,7 @@ use cardano/assets.{PolicyId}
 use cardano/transaction.{Input, Redeemer, ScriptPurpose, Spend}
 use plumbline/plumb_input.{find_input_with_single_token}
 use plumbline/plumb_redeemers.{get_single_token_spend_redeemer_by_constructor}
-use plumbline/plumb_value.{create_100}
+use plumbline/plumb_value.{create_global_tn}
 
 /// Returns a BLAKE2b-256 hash of the local state by combining the state data hash
 /// and the local state token policy ID. Useful for uniquely identifying a specific contract state.
@@ -116,7 +116,7 @@ pub fn validate_global_state_mint_ls_no_prereqs(
       redeemers,
       0,
       global_cs,
-      create_100(alias),
+      create_global_tn(alias),
     )
   (ls_id == get_ls_id_gs_red(global_state_redeemer_fields))? && (ls_data_hash == get_ls_state_gs_red(
     global_state_redeemer_fields,
@@ -131,7 +131,7 @@ pub fn get_local_state_data(
   alias: ByteArray,
 ) -> Pairs<PolicyId, ByteArray> {
   expect local_state_data: Pairs<PolicyId, ByteArray> =
-    find_input_with_single_token(inputs, global_cs, create_100(alias)).output.datum
+    find_input_with_single_token(inputs, global_cs, create_global_tn(alias)).output.datum
       |> unconstr_fields()
       |> head_list()
       |> unconstr_fields()
@@ -153,7 +153,7 @@ pub fn validate_global_state_mint_ls_with_prereqs(
   ls_cs: PolicyId,
 ) -> Bool {
   let global_input =
-    find_input_with_single_token(inputs, global_cs, create_100(alias))
+    find_input_with_single_token(inputs, global_cs, create_global_tn(alias))
   expect local_state_data: Pairs<PolicyId, ByteArray> =
     global_input.output.datum
       |> unconstr_fields()
@@ -194,7 +194,7 @@ pub fn validate_global_state_burn_ls(
       redeemers,
       1,
       global_cs,
-      create_100(alias),
+      create_global_tn(alias),
     )
   (new_state_hash == get_ls_new_state_gs_red(global_state_redeemer_fields))? && (ls_id == get_ls_id_gs_red(
     global_state_redeemer_fields,

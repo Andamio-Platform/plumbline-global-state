@@ -4,7 +4,7 @@ use cardano/assets.{Value, add, from_lovelace}
 use cardano/transaction.{
   Datum, InlineDatum, Input, NoDatum, Output, OutputReference,
 }
-use plumbline/plumb_value.{create_100, create_222}
+use plumbline/plumb_value.{create_global_tn, create_user_tn}
 use plumbline/types/global_state.{GlobalStateDatum}
 
 // ### Address
@@ -56,7 +56,7 @@ pub fn mock_pub_key_token_output_by_bytearray(bytearray: ByteArray) -> Output {
 pub fn output_222(alias: ByteArray) -> Output {
   mock_pub_key_output(
     mock_pub_key_address(alias),
-    create_min_ada_token_value(global_cs, create_222(alias), 1),
+    create_min_ada_token_value(global_cs, create_user_tn(alias), 1),
   )
 }
 
@@ -112,7 +112,7 @@ pub fn create_empty_gs_dat(alias: ByteArray) -> GlobalStateDatum {
 pub fn create_global_output(alias: ByteArray, dat: GlobalStateDatum) -> Output {
   Output {
     address: global_state_addr,
-    value: create_min_ada_token_value(global_cs, create_100(alias), 1),
+    value: create_min_ada_token_value(global_cs, create_global_tn(alias), 1),
     datum: InlineDatum(dat),
     reference_script: None,
   }

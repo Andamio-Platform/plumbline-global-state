@@ -5,7 +5,7 @@ use cardano/assets.{PolicyId, from_asset, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction, placeholder}
 use global/global_state as gs
 use plumbline/plumb_global_state.{hash_local_state}
-use plumbline/plumb_value.{create_100}
+use plumbline/plumb_value.{create_global_tn}
 use plumbline/types/global_state.{
   BurnLocalState, DeleteState, GlobalStateAction, GlobalStateDatum,
   MintLocalState, MoveState,
@@ -119,7 +119,11 @@ test validate_input_and_output_fail3_output_addr() fail {
       drop(outputs, 1),
       Output {
         address: script_address_stake_cred("global_state_addr_v1"),
-        value: create_min_ada_token_value(global_cs, create_100(user_name), 1),
+        value: create_min_ada_token_value(
+          global_cs,
+          create_global_tn(user_name),
+          1,
+        ),
         datum: InlineDatum(simple_gs_dat),
         reference_script: None,
       },
@@ -140,7 +144,11 @@ test validate_input_and_output_fail4_output_datum() fail {
       drop(outputs, 1),
       Output {
         address: global_state_addr,
-        value: create_min_ada_token_value(global_cs, create_100(user_name), 1),
+        value: create_min_ada_token_value(
+          global_cs,
+          create_global_tn(user_name),
+          1,
+        ),
         datum: InlineDatum(create_empty_gs_dat(user_name)),
         reference_script: None,
       },

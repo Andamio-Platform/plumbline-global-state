@@ -9,7 +9,7 @@ use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use plumbline/plumb_bytearray.{serialise_hash_list}
 use plumbline/plumb_global_state.{hash_local_state}
 use plumbline/plumb_input.{find_input_with_single_token}
-use plumbline/plumb_value.{create_100, quantity_is_one}
+use plumbline/plumb_value.{create_global_tn, quantity_is_one}
 use plumbline/types/global_state.{GlobalStateDatum}
 use types/global_state_v1.{LocalStateInformationV1}
 
@@ -23,7 +23,7 @@ validator init_global_state_obs_v2(
 ) {
   withdraw(redeemer: ByteArray, _account: Credential, tx: Transaction) {
     let Transaction { inputs, outputs, mint, .. } = tx
-    let tn_100 = create_100(redeemer)
+    let tn_100 = create_global_tn(redeemer)
     let global_state_datum =
       if quantity_is_one(mint, global_cs, tn_100) {
         GlobalStateDatum { alias: redeemer, local_state_data: [] }
