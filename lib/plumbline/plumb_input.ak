@@ -53,7 +53,7 @@ pub fn find_input_with_single_token(
 }
 
 /// Checks if a token has the same input and output address. 
-/// Useful to check if a CIP68 222 token is send back to the sender.
+/// Useful to check if a user token `u` token is send back to the sender.
 /// Uses `find_input_with_single_token` under the hood therefore must be a token with quantity one.
 pub fn in_out_token_address_same(
   inputs: List<Input>,

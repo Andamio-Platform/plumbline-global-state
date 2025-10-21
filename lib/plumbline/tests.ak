@@ -29,9 +29,9 @@ use plumbline/types/global_state.{
   BurnLocalState, GlobalStateDatum, MintLocalState,
 }
 use plumbproof.{
-  create_min_ada_token_value, input_222, mock_input, mock_pub_key_address,
+  create_min_ada_token_value, input_user_token, mock_input, mock_pub_key_address,
   mock_pub_key_output, mock_pub_key_token_output_by_bytearray,
-  mock_script_output, mock_utxo_ref, output_222,
+  mock_script_output, mock_utxo_ref, output_user_token,
 }
 
 // Global State
@@ -61,7 +61,7 @@ test at_validate_fail4_wrong_index() fail {
   at_validate(existing, [], "b", "db", 2) == new_pairs
 }
 
-const global_100_input =
+const global_global_token_input =
   Input(
     mock_utxo_ref("0", 0),
     mock_script_output(
@@ -83,12 +83,13 @@ const global_100_input =
     ),
   )
 
-const redeemer_100 = MintLocalState("ls_id", 0, "ls_data_hash", "ls_cs")
+const redeemer_global_token =
+  MintLocalState("ls_id", 0, "ls_data_hash", "ls_cs")
 
 // validate_global_state_mint_ls_no_prereqs
 test validate_global_state_mint_ls_no_prereqs_succeed() {
-  let inputs = [global_100_input]
-  let redeemer: Data = redeemer_100
+  let inputs = [global_global_token_input]
+  let redeemer: Data = redeemer_global_token
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), redeemer)]
   validate_global_state_mint_ls_no_prereqs(
     inputs,
@@ -102,8 +103,8 @@ test validate_global_state_mint_ls_no_prereqs_succeed() {
 }
 
 test validate_global_state_mint_ls_no_prereqs_fail1_ls_id() fail {
-  let inputs = [global_100_input]
-  let redeemer: Data = redeemer_100
+  let inputs = [global_global_token_input]
+  let redeemer: Data = redeemer_global_token
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), redeemer)]
   validate_global_state_mint_ls_no_prereqs(
     inputs,
@@ -117,8 +118,8 @@ test validate_global_state_mint_ls_no_prereqs_fail1_ls_id() fail {
 }
 
 test validate_global_state_mint_ls_no_prereqs_fail2_ls_data() fail {
-  let inputs = [global_100_input]
-  let redeemer: Data = redeemer_100
+  let inputs = [global_global_token_input]
+  let redeemer: Data = redeemer_global_token
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), redeemer)]
   validate_global_state_mint_ls_no_prereqs(
     inputs,
@@ -132,8 +133,8 @@ test validate_global_state_mint_ls_no_prereqs_fail2_ls_data() fail {
 }
 
 test validate_global_state_mint_ls_no_prereqs_fail3_ls_cs() fail {
-  let inputs = [global_100_input]
-  let redeemer: Data = redeemer_100
+  let inputs = [global_global_token_input]
+  let redeemer: Data = redeemer_global_token
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), redeemer)]
   validate_global_state_mint_ls_no_prereqs(
     inputs,
@@ -148,7 +149,7 @@ test validate_global_state_mint_ls_no_prereqs_fail3_ls_cs() fail {
 
 // get_local_state_data
 test get_local_state_data_succeed() {
-  let inputs = [global_100_input]
+  let inputs = [global_global_token_input]
   get_local_state_data(inputs, blake2b_224("global_cs"), "alias") == [
     Pair("ls_id1", "ls_data1"), Pair("ls_id2", "ls_data2"),
     Pair("ls_id3", "ls_data3"),
@@ -157,8 +158,8 @@ test get_local_state_data_succeed() {
 
 // validate_global_state_mint_ls_with_prereqs
 test validate_global_state_mint_ls_with_prereqs_succeed() {
-  let inputs = [global_100_input]
-  let redeemer: Data = redeemer_100
+  let inputs = [global_global_token_input]
+  let redeemer: Data = redeemer_global_token
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), redeemer)]
   validate_global_state_mint_ls_with_prereqs(
     inputs,
@@ -173,8 +174,8 @@ test validate_global_state_mint_ls_with_prereqs_succeed() {
 }
 
 test validate_global_state_mint_ls_with_prereqs_fail1_missing_prereqs() fail {
-  let inputs = [global_100_input]
-  let redeemer: Data = redeemer_100
+  let inputs = [global_global_token_input]
+  let redeemer: Data = redeemer_global_token
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), redeemer)]
   validate_global_state_mint_ls_with_prereqs(
     inputs,
@@ -190,7 +191,7 @@ test validate_global_state_mint_ls_with_prereqs_fail1_missing_prereqs() fail {
 
 // validate_global_state_burn_ls
 test validate_global_state_burn_ls_succeed() {
-  let inputs = [global_100_input]
+  let inputs = [global_global_token_input]
   let redeemer: Data =
     BurnLocalState("ls_id", 0, "ls_data_hash", "ls_cs", "ls_new_data_hash")
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), redeemer)]
@@ -206,7 +207,7 @@ test validate_global_state_burn_ls_succeed() {
 }
 
 test validate_global_state_burn_ls_fail1_wrong_new_data() fail {
-  let inputs = [global_100_input]
+  let inputs = [global_global_token_input]
   let redeemer: Data =
     BurnLocalState("ls_id", 0, "ls_data_hash", "ls_cs", "ls_new_data_hash")
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), redeemer)]
@@ -227,9 +228,9 @@ test validate_global_state_burn_ls_fail1_wrong_new_data() fail {
 test find_input_succeed() {
   let inputs =
     [
-      Input(mock_utxo_ref("2", 2), output_222("A")),
+      Input(mock_utxo_ref("2", 2), output_user_token("A")),
       mock_input("a"),
-      input_222("a"),
+      input_user_token("a"),
     ]
   find_input(inputs, mock_utxo_ref("0", 0)) == mock_input("a")
 }
@@ -237,9 +238,9 @@ test find_input_succeed() {
 test find_input_fail1_no_ref() fail {
   let inputs =
     [
-      Input(mock_utxo_ref("2", 2), output_222("A")),
+      Input(mock_utxo_ref("2", 2), output_user_token("A")),
       mock_input("a"),
-      input_222("a"),
+      input_user_token("a"),
     ]
   find_input(inputs, mock_utxo_ref("10", 0)) == mock_input("a")
 }

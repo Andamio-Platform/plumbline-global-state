@@ -1,7 +1,7 @@
 # plumbline-global-state
 
 ## global-state
-A Cardano validator written in Aiken for managing user state data on the blockchain. This validator provides a structured system for users to maintain multiple local states within a global state container. It utilizes CIP68 NFTs where 222 tokens are used to prove ownership of a global state attached to a 100 token.
+A Cardano validator written in Aiken for managing user state data on the blockchain. This validator provides a structured system for users to maintain multiple local states within a global state container. It utilizes reference NFTs where `u` tokens are used to prove ownership of a global state attached to a `g` token.
 
 ### Overview
 The Global State Validator allows users to:
@@ -133,11 +133,11 @@ This validator acts as a "watcher" that ensures proper state transitions.
 Creates a fresh global state for users joining the system.
 
 **Flow:**
-```User mints Token 100 → Zero withdrawal triggered → Empty global state created```
+```User mints Token `g` → Zero withdrawal triggered → Empty global state created```
 
 **Requirements:**
 
-- Global state token (Token 100) must be minted
+- Global state token (Token `g`) must be minted
 - Output must go to global state address
 - Datum must contain empty local state data
 
@@ -155,7 +155,7 @@ Upgrades existing V1 datum to the new V2 datum type.
 
 **Requirements:**
 
-- No token minting (Token 100 from global state v1)
+- No token minting (Token `g` from global state v1)
 - All local states must be in unminted state
 - V1 input must be found with existing token
 
@@ -180,7 +180,7 @@ pub type GlobalStateDatumV1 {
   user_info: Data,
 }
 ```
-- v1 currently attached to Token 100 at global state v1 validator
+- v1 currently attached to Token `g` at global state v1 validator
 ```
 Pair(local_state_id, blake2b_256(serialise_data(local_state_data, "")))
 ```

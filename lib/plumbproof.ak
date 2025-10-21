@@ -52,8 +52,8 @@ pub fn mock_pub_key_token_output_by_bytearray(bytearray: ByteArray) -> Output {
   )
 }
 
-/// Create an output which has a public key address and a global state 222 token (with policy id `global_cs`) + ada.
-pub fn output_222(alias: ByteArray) -> Output {
+/// Create an output which has a public key address and a global state `u` token (with policy id `global_cs`) + ada.
+pub fn output_user_token(alias: ByteArray) -> Output {
   mock_pub_key_output(
     mock_pub_key_address(alias),
     create_min_ada_token_value(global_cs, create_user_tn(alias), 1),
@@ -73,10 +73,10 @@ pub fn mock_input(some: ByteArray) -> Input {
   Input(mock_utxo_ref("0", 0), mock_pub_key_token_output_by_bytearray(some))
 }
 
-/// Create an input which has a public key address and a global state 222 token + ada.
-/// Uses `output_222`.
-pub fn input_222(alias: ByteArray) -> Input {
-  Input(mock_utxo_ref("5", 5), output_222(alias))
+/// Create an input which has a public key address and a global state user token + ada.
+/// Uses `output_user_token`.
+pub fn input_user_token(alias: ByteArray) -> Input {
+  Input(mock_utxo_ref("5", 5), output_user_token(alias))
 }
 
 // ### Global State
@@ -96,7 +96,7 @@ pub const global_cs = blake2b_224("global_cs")
 /// Token name of all local state policy reference tokens.
 pub const state_token_name = "LocalStateToken"
 
-/// Address where all 100 `global_cs` tokens are locked.
+/// Address where all `g `global_cs` tokens are locked.
 pub const global_state_addr =
   Address(Script("global_state_addr"), Some(stake_cred))
 
@@ -107,7 +107,7 @@ pub fn create_empty_gs_dat(alias: ByteArray) -> GlobalStateDatum {
 
 /// Create a global state output. 
 /// address = `global_state_addr`.
-/// value = 2 Ada + 100 `global_cs`.
+/// value = 2 Ada + `g` `global_cs`.
 /// datum as provided.
 pub fn create_global_output(alias: ByteArray, dat: GlobalStateDatum) -> Output {
   Output {

@@ -23,13 +23,13 @@ validator init_global_state_obs_v2(
 ) {
   withdraw(redeemer: ByteArray, _account: Credential, tx: Transaction) {
     let Transaction { inputs, outputs, mint, .. } = tx
-    let tn_100 = create_global_tn(redeemer)
+    let tn_r = create_global_tn(redeemer)
     let global_state_datum =
-      if quantity_is_one(mint, global_cs, tn_100) {
+      if quantity_is_one(mint, global_cs, tn_r) {
         GlobalStateDatum { alias: redeemer, local_state_data: [] }
       } else {
         expect ls_infos: List<LocalStateInformationV1> =
-          find_input_with_single_token(inputs, global_cs, tn_100).output.datum
+          find_input_with_single_token(inputs, global_cs, tn_r).output.datum
             |> unconstr_fields()
             |> head_list()
             |> unconstr_fields()
@@ -65,7 +65,7 @@ validator init_global_state_obs_v2(
         (output.address == global_state_addr)? && quantity_is_one(
           output.value,
           global_cs,
-          tn_100,
+          tn_r,
         )? && (output.datum == InlineDatum(global_state_datum))?
       },
     )

@@ -123,7 +123,7 @@ pub fn validate_global_state_mint_ls_no_prereqs(
   ))? && (ls_cs == get_ls_cs_gs_red(global_state_redeemer_fields))?
 }
 
-/// Get `local_state_data` from `GlobalStateDatum` by searching for 100 global state token.
+/// Get `local_state_data` from `GlobalStateDatum` by searching for `g` global state token.
 /// Return `local_state_data`.
 pub fn get_local_state_data(
   inputs: List<Input>,

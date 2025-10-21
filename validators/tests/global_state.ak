@@ -12,9 +12,9 @@ use plumbline/types/global_state.{
 }
 use plumbproof.{
   create_empty_gs_dat, create_global_output, create_min_ada_token_value,
-  global_cs, global_state_addr, input_222, mock_script_address,
-  mock_script_output, mock_utxo_ref, output_222, script_address_stake_cred,
-  state_token_name,
+  global_cs, global_state_addr, input_user_token, mock_script_address,
+  mock_script_output, mock_utxo_ref, output_user_token,
+  script_address_stake_cred, state_token_name,
 }
 use types/index_data.{IndexData}
 
@@ -56,13 +56,13 @@ fn validate_input_and_output_succeed_lists(
 ) -> Pair<List<Input>, List<Output>> {
   let inputs =
     [
-      input_222(user_name_self),
+      input_user_token(user_name_self),
       create_global_input(user_name_self, create_empty_gs_dat(user_name_self)),
     ]
   let outputs =
     [
       create_global_output(user_name_self, simple_gs_dat),
-      output_222(user_name_self),
+      output_user_token(user_name_self),
     ]
   Pair(inputs, outputs)
 }
@@ -96,13 +96,13 @@ test validate_input_and_output_fail1_input() fail {
 }
 
 // validate_input_and_output fail test
-// wrong 222 token
-test validate_input_and_output_fail2_222() fail {
+// wrong user token
+test validate_input_and_output_fail2_user_token() fail {
   let Pair(inputs, outputs) = validate_input_and_output_succeed_lists(user_name)
   gs.validate_input_and_output(
-    push(drop(inputs, 1), input_222("user_name1")),
+    push(drop(inputs, 1), input_user_token("user_name1")),
     mock_utxo_ref("0", 0),
-    push(take(outputs, 1), output_222("user_name1")),
+    push(take(outputs, 1), output_user_token("user_name1")),
     global_cs,
     simple_gs_dat,
   )
@@ -265,7 +265,7 @@ fn global_state_spend_mint_success_tx(user_name: ByteArray) -> Transaction {
   let Pair(inputs, outputs) = validate_input_and_output_succeed_lists(user_name)
   Transaction {
     ..placeholder,
-    inputs: inputs,
+    inputs,
     reference_inputs: [
       Input(
         mock_utxo_ref("8", 9),
@@ -281,7 +281,7 @@ fn global_state_spend_mint_success_tx(user_name: ByteArray) -> Transaction {
         },
       ),
     ],
-    outputs: outputs,
+    outputs,
     mint: from_asset(blake2b_224("local_state_cs"), user_name, 1),
   }
 }
@@ -340,7 +340,7 @@ fn global_state_spend_burn_success_tx(user_name: ByteArray) -> Transaction {
   Transaction {
     ..placeholder,
     inputs: [
-      input_222(user_name),
+      input_user_token(user_name),
       create_global_input(user_name, simple_gs_dat),
     ],
     outputs: [
@@ -352,7 +352,7 @@ fn global_state_spend_burn_success_tx(user_name: ByteArray) -> Transaction {
           hash_local_state("", ""),
         ),
       ),
-      output_222(user_name),
+      output_user_token(user_name),
     ],
     mint: from_asset(blake2b_224("local_state_cs"), user_name, -1),
   }
@@ -394,7 +394,7 @@ fn global_state_spend_delete_success_tx(user_name: ByteArray) -> Transaction {
   Transaction {
     ..placeholder,
     inputs: [
-      input_222(user_name),
+      input_user_token(user_name),
       create_global_input(
         user_name,
         create_gs_dat(
@@ -406,7 +406,7 @@ fn global_state_spend_delete_success_tx(user_name: ByteArray) -> Transaction {
     ],
     outputs: [
       create_global_output(user_name, create_empty_gs_dat(user_name)),
-      output_222(user_name),
+      output_user_token(user_name),
     ],
   }
 }
@@ -443,7 +443,7 @@ test global_state_spend_delete_fail1_not_deleted() fail {
             hash_local_state("", ""),
           ),
         ),
-        output_222(user_name),
+        output_user_token(user_name),
       ],
     },
   )
@@ -456,7 +456,7 @@ fn global_state_spend_move_success_tx(user_name: ByteArray) -> Transaction {
   Transaction {
     ..placeholder,
     inputs: [
-      input_222(user_name),
+      input_user_token(user_name),
       create_global_input(user_name, simple_gs_dat),
     ],
     reference_inputs: [
@@ -476,7 +476,7 @@ fn global_state_spend_move_success_tx(user_name: ByteArray) -> Transaction {
         ),
       ),
     ],
-    outputs: [output_222(user_name)],
+    outputs: [output_user_token(user_name)],
     withdrawals: [Pair(Script(init_global_obs_sh), 0)],
   }
 }

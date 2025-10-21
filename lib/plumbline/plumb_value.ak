@@ -32,14 +32,14 @@ pub fn two_token_value(value: Value) -> Bool {
   }
 }
 
-/// Create a `ByteArray` with 222 as prefix.
-/// Useful for CIP68 tokens.
+/// Create a `ByteArray` with `u` as prefix.
+/// Useed for user tokens.
 pub fn create_user_tn(alias: ByteArray) -> ByteArray {
   concat(#"75", alias)
 }
 
-/// Create a `ByteArray` with 100 as prefix.
-/// Useful for CIP68 tokens.
+/// Create a `ByteArray` with `g` as prefix.
+/// Useful for reference tokens.
 pub fn create_global_tn(alias: ByteArray) -> ByteArray {
   concat(#"67", alias)
 }

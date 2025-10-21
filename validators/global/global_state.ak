@@ -37,8 +37,8 @@ pub fn validate_input_and_output(
   datum: GlobalStateDatum,
 ) -> Bool {
   let own_input_output = find_input(inputs, output_reference).output
-  let tn_100 = create_global_tn(datum.alias)
-  quantity_is_one(own_input_output.value, global_cs, tn_100)? && in_out_token_address_same(
+  let tn_r = create_global_tn(datum.alias)
+  quantity_is_one(own_input_output.value, global_cs, tn_r)? && in_out_token_address_same(
     inputs,
     outputs,
     global_cs,
@@ -48,7 +48,7 @@ pub fn validate_input_and_output(
     fn(output) {
       (output.address == own_input_output.address)? && (output.datum == InlineDatum(
         datum,
-      ))? && quantity_is_one(output.value, global_cs, tn_100)?
+      ))? && quantity_is_one(output.value, global_cs, tn_r)?
     },
   )
 }
