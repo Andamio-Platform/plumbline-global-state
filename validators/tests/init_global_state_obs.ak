@@ -7,7 +7,7 @@ use cardano/transaction.{InlineDatum, Input, Output, Transaction, placeholder}
 use global/init_global_state_obs as init_obs
 use plumbline/plumb_bytearray.{serialise_hash_list}
 use plumbline/plumb_global_state.{hash_local_state}
-use plumbline/plumb_value.{create_100}
+use plumbline/plumb_value.{create_global_tn}
 use plumbline/types/global_state.{GlobalStateDatum}
 use plumbproof.{
   create_empty_gs_dat, create_global_output, create_min_ada_token_value,
@@ -32,7 +32,7 @@ fn init_gs_obs_tx_empty(alias: ByteArray) {
   Transaction {
     ..placeholder,
     outputs: [create_global_output(alias, create_empty_gs_dat(alias))],
-    mint: from_asset(global_cs, create_100(alias), 1),
+    mint: from_asset(global_cs, create_global_tn(alias), 1),
   }
 }
 
@@ -115,7 +115,11 @@ fn init_gs_obs_tx_no_mint_ls(
         mock_utxo_ref("0", 0),
         Output {
           address: script_address_stake_cred("global_state_addr_v1"),
-          value: create_min_ada_token_value(global_cs, create_100(alias), 1),
+          value: create_min_ada_token_value(
+            global_cs,
+            create_global_tn(alias),
+            1,
+          ),
           datum: InlineDatum(gs_dat_v1),
           reference_script: None,
         },

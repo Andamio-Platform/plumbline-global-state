@@ -32,16 +32,16 @@ pub fn two_token_value(value: Value) -> Bool {
   }
 }
 
-/// Create a `ByteArray` with 222 as prefix.
-/// Useful for CIP68 tokens.
-pub fn create_222(alias: ByteArray) -> ByteArray {
-  concat(#"323232", alias)
+/// Create a `ByteArray` with `u` as prefix.
+/// Useed for user tokens.
+pub fn create_user_tn(alias: ByteArray) -> ByteArray {
+  concat(#"75", alias)
 }
 
-/// Create a `ByteArray` with 100 as prefix.
-/// Useful for CIP68 tokens.
-pub fn create_100(alias: ByteArray) -> ByteArray {
-  concat(#"313030", alias)
+/// Create a `ByteArray` with `g` as prefix.
+/// Useful for reference tokens.
+pub fn create_global_tn(alias: ByteArray) -> ByteArray {
+  concat(#"67", alias)
 }
 
 /// Check there exists a policy id and token name with amount 1 in a value.

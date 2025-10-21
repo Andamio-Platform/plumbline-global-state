@@ -23,7 +23,7 @@ const ls_cs = blake2b_224("loal_state_cs")
 
 const alias = "user_name"
 
-const input_100_utxo_ref = mock_utxo_ref("0", 1)
+const input_global_token_utxo_ref = mock_utxo_ref("0", 1)
 
 const mint_local_state_succeed_tx =
   Transaction { ..placeholder, mint: from_asset(ls_cs, alias, 1) }
@@ -40,7 +40,7 @@ test simple_local_state_mint_succeed_empty() {
       ..mint_local_state_succeed_tx,
       inputs: [
         Input(
-          input_100_utxo_ref,
+          input_global_token_utxo_ref,
           create_global_output(alias, create_empty_gs_dat(alias)),
         ),
       ],
@@ -51,7 +51,7 @@ test simple_local_state_mint_succeed_empty() {
           InlineDatum([]),
         ),
       ],
-      redeemers: [Pair(Spend(input_100_utxo_ref), red)],
+      redeemers: [Pair(Spend(input_global_token_utxo_ref), red)],
     },
   )
 }
@@ -78,7 +78,7 @@ test simple_local_state_mint_succeed_prereq() {
       ..mint_local_state_succeed_tx,
       inputs: [
         Input(
-          input_100_utxo_ref,
+          input_global_token_utxo_ref,
           create_global_output(
             alias,
             GlobalStateDatum {
@@ -103,7 +103,7 @@ test simple_local_state_mint_succeed_prereq() {
           InlineDatum([]),
         ),
       ],
-      redeemers: [Pair(Spend(input_100_utxo_ref), red)],
+      redeemers: [Pair(Spend(input_global_token_utxo_ref), red)],
     },
   )
 }
@@ -130,7 +130,7 @@ test simple_local_state_mint_succeed_with_state() {
       ..mint_local_state_succeed_tx,
       inputs: [
         Input(
-          input_100_utxo_ref,
+          input_global_token_utxo_ref,
           create_global_output(
             alias,
             GlobalStateDatum {
@@ -156,7 +156,7 @@ test simple_local_state_mint_succeed_with_state() {
           InlineDatum(["0"]),
         ),
       ],
-      redeemers: [Pair(Spend(input_100_utxo_ref), red)],
+      redeemers: [Pair(Spend(input_global_token_utxo_ref), red)],
     },
   )
 }
@@ -191,7 +191,7 @@ test simple_local_state_succeed_with_multiple_state() {
       ..mint_local_state_succeed_tx,
       inputs: [
         Input(
-          input_100_utxo_ref,
+          input_global_token_utxo_ref,
           create_global_output(
             alias,
             GlobalStateDatum {
@@ -221,7 +221,7 @@ test simple_local_state_succeed_with_multiple_state() {
           InlineDatum(["0"]),
         ),
       ],
-      redeemers: [Pair(Spend(input_100_utxo_ref), red)],
+      redeemers: [Pair(Spend(input_global_token_utxo_ref), red)],
     },
   )
 }
@@ -282,7 +282,7 @@ test simple_local_state_burn_succeed() {
       ..placeholder,
       inputs: [
         Input(
-          input_100_utxo_ref,
+          input_global_token_utxo_ref,
           create_global_output(alias, create_empty_gs_dat(alias)),
         ),
         Input(
@@ -295,7 +295,7 @@ test simple_local_state_burn_succeed() {
         ),
       ],
       mint: from_asset(ls_cs, alias, -1),
-      redeemers: [Pair(Spend(input_100_utxo_ref), red)],
+      redeemers: [Pair(Spend(input_global_token_utxo_ref), red)],
     },
   )
 }
