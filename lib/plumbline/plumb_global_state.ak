@@ -152,17 +152,17 @@ pub fn validate_global_state_mint_ls_with_prereqs(
   ls_data_hash: ByteArray,
   ls_cs: PolicyId,
 ) -> Bool {
-  let global_input =
+  let Input { output, output_reference } =
     find_input_with_single_token(inputs, global_cs, create_global_tn(alias))
   expect local_state_data: Pairs<PolicyId, ByteArray> =
-    global_input.output.datum
+    output.datum
       |> unconstr_fields()
       |> head_list()
       |> unconstr_fields()
       |> tail_list()
       |> head_list()
   let global_state_redeemer_fields =
-    pairs.get_first(redeemers, Spend(global_input.output_reference))
+    pairs.get_first(redeemers, Spend(output_reference))
       |> unconstr_fields()
       |> head_list()
       |> unconstr_fields()

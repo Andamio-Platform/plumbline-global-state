@@ -1,10 +1,9 @@
 use aiken/collection/list.{find}
-use cardano/assets.{AssetName, PolicyId, Value, merge, zero}
+use cardano/assets.{AssetName, PolicyId, Value, has_nft, merge, zero}
 use cardano/transaction.{Input, Output, OutputReference}
 use plumbline/plumb_output.{
   find_output_with_single_token, policy_id_present_in_output,
 }
-use plumbline/plumb_value.{quantity_is_one}
 
 /// Find an input which has a specific output reference.
 /// Fails if no input found.
@@ -42,10 +41,7 @@ pub fn find_input_with_single_token(
   name: AssetName,
 ) -> Input {
   when
-    find(
-      inputs,
-      fn(input) { quantity_is_one(input.output.value, policy, name) },
-    )
+    find(inputs, fn(input) { has_nft(input.output.value, policy, name) })
   is {
     Some(out) -> out
     _ -> fail @"no input with that token"

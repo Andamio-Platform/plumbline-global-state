@@ -1,8 +1,7 @@
 use aiken/collection/list.{any, find}
 use cardano/address.{Address}
-use cardano/assets.{AssetName, PolicyId, Value, merge, policies, zero}
+use cardano/assets.{AssetName, PolicyId, Value, has_nft, merge, policies, zero}
 use cardano/transaction.{Output}
-use plumbline/plumb_value.{quantity_is_one}
 
 /// Check if a policy id is present in an output
 pub fn policy_id_present_in_output(output: Output, policy_id: PolicyId) -> Bool {
@@ -26,9 +25,7 @@ pub fn find_output_with_single_token(
   policy: PolicyId,
   name: AssetName,
 ) -> Output {
-  when
-    find(outputs, fn(output) { quantity_is_one(output.value, policy, name) })
-  is {
+  when find(outputs, fn(output) { has_nft(output.value, policy, name) }) is {
     Some(out) -> out
     _ -> fail @"no output with that token"
   }

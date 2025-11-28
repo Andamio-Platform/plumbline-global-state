@@ -4,7 +4,7 @@
 use aiken/builtin.{fst_pair, snd_pair}
 use aiken/collection/list
 use cardano/address.{from_script}
-use cardano/assets.{PolicyId}
+use cardano/assets.{PolicyId, has_nft}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
@@ -16,7 +16,7 @@ use plumbline/plumb_global_state.{
 }
 use plumbline/plumb_input.{find_input}
 use plumbline/plumb_output.{policy_id_present_in_outputs}
-use plumbline/plumb_value.{quantity_is_one, single_name_of_policy_id}
+use plumbline/plumb_value.{single_name_of_policy_id}
 
 pub type LocalStateData {
   local_state_id: PolicyId,
@@ -47,14 +47,13 @@ validator simple_local_state(
     when redeemer is {
       Issue(alias, new_state) -> {
         let Transaction { inputs, outputs, .. } = tx
-        let own_input = find_input(inputs, output_reference)
-        let own_policy_id =
-          get_script_hash_from_address(own_input.output.address)
+        let own_address = find_input(inputs, output_reference).output.address
+        let own_policy_id = get_script_hash_from_address(own_address)
         policy_id_present_in_outputs(outputs, local_state_id)? && list.any(
           outputs,
-          fn(output) {
-            output.datum == InlineDatum(new_state) && output.address == own_input.output.address && quantity_is_one(
-              output.value,
+          fn(Output { address, value, datum, .. }) {
+            datum == InlineDatum(new_state) && address == own_address && has_nft(
+              value,
               own_policy_id,
               alias,
             )
@@ -63,10 +62,9 @@ validator simple_local_state(
       }
       Burn(alias) -> {
         let Transaction { inputs, mint, redeemers, .. } = tx
-        let own_input = find_input(inputs, output_reference)
+        let own_addr = find_input(inputs, output_reference).output.address
         expect Some(state) = datum_opt
-        let own_policy_id =
-          get_script_hash_from_address(own_input.output.address)
+        let own_policy_id = get_script_hash_from_address(own_addr)
         single_name_of_policy_id(mint, own_policy_id, alias, -1)? && validate_global_state_burn_ls(
           inputs,
           redeemers,
@@ -88,12 +86,18 @@ validator simple_local_state(
         let global_state_data_to_check =
           list.map(
             local_state_data,
-            fn(lsd) {
+            fn(
+              LocalStateData {
+                local_state_id,
+                local_state_data_clear,
+                local_state_cs,
+              },
+            ) {
               Pair(
-                lsd.local_state_id,
+                local_state_id,
                 hash_local_state(
-                  serialise_hash_list(lsd.local_state_data_clear),
-                  lsd.local_state_cs,
+                  serialise_hash_list(local_state_data_clear),
+                  local_state_cs,
                 ),
               )
             },
@@ -117,22 +121,20 @@ validator simple_local_state(
           fn(prereq) {
             list.any(
               local_state_data,
-              fn(n) {
-                n.local_state_id == fst_pair(prereq) && list.all(
+              fn(LocalStateData { local_state_id, local_state_data_clear, .. }) {
+                local_state_id == fst_pair(prereq) && list.all(
                   snd_pair(prereq),
-                  fn(p) { list.has(n.local_state_data_clear, p) },
+                  fn(p) { list.has(local_state_data_clear, p) },
                 )
               },
             )
           },
         )? && list.any(
           outputs,
-          fn(output) {
-            output.datum == InlineDatum(state) && quantity_is_one(
-              output.value,
+          fn(Output { address, value, datum, .. }) {
+            datum == InlineDatum(state) && has_nft(value, policy_id, alias) && address == from_script(
               policy_id,
-              alias,
-            ) && output.address == from_script(policy_id)
+            )
           },
         )
       }

@@ -2,14 +2,12 @@
 
 use aiken/collection/list.{all, any, length, unique}
 use cardano/address.{Address, Script, StakeCredential}
-use cardano/assets.{AssetName, PolicyId, quantity_of}
-use cardano/transaction.{InlineDatum, OutputReference, Transaction}
+use cardano/assets.{AssetName, PolicyId, has_any_nft_strict, quantity_of}
+use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction}
 use plumbline/plumb_address.{get_script_hash_from_address}
 use plumbline/plumb_input.{find_input}
 use plumbline/plumb_output.{policy_id_present_in_outputs}
-use plumbline/plumb_value.{
-  quantity_is_one, single_name_of_policy_id, two_token_value,
-}
+use plumbline/plumb_value.{single_name_of_policy_id}
 use plumbline/types/local_state_registration_data.{LocalStateRegistrationData}
 
 // Validator where local state reference scripts are stored to be used in a global state.
@@ -52,11 +50,11 @@ validator local_state_registration(
           let ref_datum = InlineDatum(ls_id)
           any(
             tx.outputs,
-            fn(output) {
-              let value = output.value
-              quantity_is_one(value, policy_id, state_token_name) && (output.datum == ref_datum)? && (output.address == own_addr)? && two_token_value(
+            fn(Output { address, value, datum, reference_script }) {
+              (datum == ref_datum)? && (address == own_addr)? && has_any_nft_strict(
                 value,
-              )? && output.reference_script == ref_scr
+                policy_id,
+              )? && reference_script == ref_scr
             },
           )? && policy_id_present_in_outputs(tx.outputs, ls_id)?
         },

@@ -1,7 +1,7 @@
 use aiken/builtin.{
   b_data, blake2b_224, head_list, integer_to_bytearray, un_b_data,
 }
-use cardano/assets.{add, from_asset, from_lovelace, zero}
+use cardano/assets.{add, from_lovelace, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Spend}
 use plumbline/plumb_global_state.{
   at_validate, get_local_state_data, validate_global_state_burn_ls,
@@ -21,8 +21,8 @@ use plumbline/plumb_redeemers.{
   get_single_token_spend_redeemer_by_constructor,
 }
 use plumbline/plumb_value.{
-  create_global_tn, flat_val_paid, flat_val_to_value, geq_value, quantity_is_one,
-  single_name_of_policy_id, substract_value, two_token_value,
+  create_global_tn, flat_val_paid, flat_val_to_value, geq_value,
+  single_name_of_policy_id, substract_value,
 }
 use plumbline/types/flat_value.{FlatValue}
 use plumbline/types/global_state.{
@@ -558,34 +558,6 @@ test single_name_of_policy_id_fail_cs() fail {
       |> add("cs4", "tn2", 1)
       |> add("cs3", "tn3", 1)
   single_name_of_policy_id(some_value, "cs2", "tn2", 1)?
-}
-
-// two_token_value
-test two_token_value_test_true() {
-  let value = create_min_ada_token_value(blake2b_224("cs1"), "cs1", 2)
-  two_token_value(value)?
-}
-
-test two_token_value_test_fail1() fail {
-  let value = add(from_asset("cs2", "tn1", 1), "cs2", "tn2", 2)
-  two_token_value(value)?
-}
-
-test two_token_value_test_fail2() fail {
-  let value =
-    add(add(from_asset("cs2", "tn1", 1), "cs2", "tn2", 2), "cs3", "tn3", 3)
-  two_token_value(value)?
-}
-
-// quantity_is_one
-test quantity_is_one_test_success() {
-  let value1 = add(from_asset("cs2", "tn1", 1), "cs2", "tn2", 2)
-  quantity_is_one(value1, "cs2", "tn1")
-}
-
-test quantity_is_one_test_fail() fail {
-  let value1 = add(from_asset("cs2", "tn1", 1), "cs2", "tn2", 2)
-  quantity_is_one(value1, "cs2", "tn2")
 }
 
 // geq_value
