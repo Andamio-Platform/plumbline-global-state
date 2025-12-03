@@ -1,20 +1,16 @@
-use aiken/builtin.{blake2b_224}
+use aiken/builtin.{b_data, blake2b_224}
 use aiken/cbor.{serialise}
-use aiken/collection/list.{drop, map, push}
+use aiken/collection/list.{push}
 use cardano/address.{Script}
-use cardano/assets.{from_asset}
-use cardano/transaction.{InlineDatum, Input, Output, Transaction, placeholder}
+use cardano/transaction.{Input, Mint, Output, Transaction, placeholder}
 use global/init_global_state_obs as init_obs
-use plumbline/plumb_bytearray.{serialise_hash_list}
 use plumbline/plumb_global_state.{hash_local_state}
-use plumbline/plumb_value.{create_global_tn}
 use plumbline/types/global_state.{GlobalStateDatum}
 use plumbproof.{
   create_empty_gs_dat, create_global_output, create_min_ada_token_value,
-  global_cs, global_state_addr, mock_script_address, mock_utxo_ref,
-  script_address_stake_cred,
+  global_cs, global_state_addr, mock_pub_key_output, mock_script_address,
+  mock_utxo_ref,
 }
-use types/global_state_v1.{GlobalStateDatumV1, LocalStateInformationV1}
 
 // call withdraw
 fn init_gs_obs_withdraw(red: ByteArray, tx: Transaction) {
@@ -31,8 +27,17 @@ fn init_gs_obs_withdraw(red: ByteArray, tx: Transaction) {
 fn init_gs_obs_tx_empty(alias: ByteArray) {
   Transaction {
     ..placeholder,
+    inputs: [
+      Input(
+        mock_utxo_ref("0", 0),
+        mock_pub_key_output(
+          global_state_addr,
+          create_min_ada_token_value(global_cs, " ", 1),
+        ),
+      ),
+    ],
     outputs: [create_global_output(alias, create_empty_gs_dat(alias))],
-    mint: from_asset(global_cs, create_global_tn(alias), 1),
+    redeemers: [Pair(Mint(global_cs), b_data(alias))],
   }
 }
 
@@ -102,110 +107,14 @@ test init_obs_withdraw_empty_fail3_address() fail {
   )
 }
 
-// move existing global state to new global state transaction
-fn init_gs_obs_tx_no_mint_ls(
-  alias: ByteArray,
-  gs_dat_v1: GlobalStateDatumV1,
-  gs_dat: GlobalStateDatum,
-) {
-  Transaction {
-    ..placeholder,
-    inputs: [
-      Input(
-        mock_utxo_ref("0", 0),
-        Output {
-          address: script_address_stake_cred("global_state_addr_v1"),
-          value: create_min_ada_token_value(
-            global_cs,
-            create_global_tn(alias),
-            1,
-          ),
-          datum: InlineDatum(gs_dat_v1),
-          reference_script: None,
-        },
-      ),
-    ],
-    outputs: [create_global_output(alias, gs_dat)],
-  }
-}
-
-// create v1 global state datum from local state infos
-fn create_gs_dat_v1(
-  alias: ByteArray,
-  ls_infos: List<LocalStateInformationV1>,
-) -> GlobalStateDatum {
-  GlobalStateDatum(
-    alias,
-    map(
-      ls_infos,
-      fn(n) {
-        Pair(
-          n.local_state_id,
-          hash_local_state(serialise_hash_list(n.local_state_data), ""),
-        )
-      },
-    ),
-  )
-}
-
-// move existing global state to new global state test succeed
-test init_obs_withdraw_no_mint_succeed() {
+// withdraw test when minting a global state token
+test init_obs_withdraw_empty_fail4_wrong_redeemer() fail {
   let user_name = "user_name"
-  let local_state_infos =
-    map(
-      ["1", "2", "3", "4"],
-      fn(n) {
-        LocalStateInformationV1(blake2b_224(n), ["100", "102", "103"], False)
-      },
-    )
   init_gs_obs_withdraw(
     user_name,
-    init_gs_obs_tx_no_mint_ls(
-      user_name,
-      GlobalStateDatumV1(global_cs, user_name, local_state_infos, ""),
-      create_gs_dat_v1(user_name, local_state_infos),
-    ),
-  )
-}
-
-// move existing global state to new global state test succeed
-// wrong state transition
-test init_obs_withdraw_no_mint_fail1_datum1() fail {
-  let user_name = "user_name"
-  let local_state_infos =
-    map(
-      ["1", "2", "3", "4", "5"],
-      fn(n) {
-        LocalStateInformationV1(blake2b_224(n), ["100", "102", "103"], False)
-      },
-    )
-  init_gs_obs_withdraw(
-    user_name,
-    init_gs_obs_tx_no_mint_ls(
-      user_name,
-      GlobalStateDatumV1(global_cs, user_name, drop(local_state_infos, 1), ""),
-      create_gs_dat_v1(user_name, local_state_infos),
-    ),
-  )
-}
-
-// move existing global state to new global state test succeed
-// wrong state transition
-test init_obs_withdraw_no_mint_fail2_datum2() fail {
-  let user_name = "user_name"
-  let local_state_infos =
-    map(
-      ["1", "2", "3", "4"],
-      fn(n) {
-        LocalStateInformationV1(blake2b_224(n), ["100", "102", "103"], False)
-      },
-    )
-  init_gs_obs_withdraw(
-    user_name,
-    init_gs_obs_tx_no_mint_ls(
-      user_name,
-      GlobalStateDatumV1(global_cs, user_name, local_state_infos, ""),
-      create_gs_dat_v1("user_name1", local_state_infos),
-    ),
+    Transaction {
+      ..init_gs_obs_tx_empty(user_name),
+      redeemers: [Pair(Mint(global_cs), b_data("wrong_alias"))],
+    },
   )
 }
