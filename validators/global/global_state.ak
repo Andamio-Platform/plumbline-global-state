@@ -6,7 +6,7 @@ use aiken/builtin.{
 use aiken/collection/list.{any}
 use aiken/collection/pairs.{has_key}
 use cardano/address.{Script}
-use cardano/assets.{PolicyId, quantity_of}
+use cardano/assets.{PolicyId, has_nft, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
@@ -14,8 +14,9 @@ use plumbline/plumb_global_state.{at_validate, hash_local_state}
 use plumbline/plumb_input.{
   find_input, find_input_with_policy, in_out_token_address_same,
 }
-use plumbline/plumb_output.{policy_id_present_in_output}
-use plumbline/plumb_value.{create_global_tn, create_user_tn, quantity_is_one}
+use plumbline/plumb_value.{
+  create_global_tn, create_user_tn, policy_id_present_in_value,
+}
 use plumbline/types/global_state.{
   BurnLocalState, DeleteState, GlobalStateAction, GlobalStateDatum,
   MintLocalState, MoveState,
@@ -34,21 +35,25 @@ pub fn validate_input_and_output(
   output_reference: OutputReference,
   outputs: List<Output>,
   global_cs: PolicyId,
-  datum: GlobalStateDatum,
+  gs_datum: GlobalStateDatum,
 ) -> Bool {
-  let own_input_output = find_input(inputs, output_reference).output
-  let tn_r = create_global_tn(datum.alias)
-  quantity_is_one(own_input_output.value, global_cs, tn_r)? && in_out_token_address_same(
+  let Input { output: own_input, .. } = find_input(inputs, output_reference)
+  let Output { address: input_address, value: input_value, .. } = own_input
+  let alias = gs_datum.alias
+  let tn_r = create_global_tn(alias)
+  has_nft(input_value, global_cs, tn_r)? && in_out_token_address_same(
     inputs,
     outputs,
     global_cs,
-    create_user_tn(datum.alias),
+    create_user_tn(alias),
   )? && any(
     outputs,
-    fn(output) {
-      (output.address == own_input_output.address)? && (output.datum == InlineDatum(
-        datum,
-      ))? && quantity_is_one(output.value, global_cs, tn_r)?
+    fn(Output { address, value, datum, .. }) {
+      (address == input_address)? && (datum == InlineDatum(gs_datum))? && has_nft(
+        value,
+        global_cs,
+        tn_r,
+      )?
     },
   )
 }
@@ -143,14 +148,14 @@ validator global_state_validator(
         local_state_cs,
       } -> {
         let Transaction { inputs, reference_inputs, outputs, mint, .. } = tx
-        expect Some(datum) = datum_opt
-        (quantity_of(mint, local_state_cs, datum.alias) > 0)? && any(
+        expect Some(GlobalStateDatum { alias, local_state_data }) = datum_opt
+        (quantity_of(mint, local_state_cs, alias) > 0)? && any(
           reference_inputs,
-          fn(input) {
-            let input_output = input.output
-            policy_id_present_in_output(input_output, local_state_register_cs) && input_output.datum == InlineDatum(
+          fn(Input { output: input_output, .. }) {
+            let Output { value, datum, reference_script, .. } = input_output
+            policy_id_present_in_value(value, local_state_register_cs) && datum == InlineDatum(
               local_state_id,
-            ) && input_output.reference_script == Some(local_state_cs)
+            ) && reference_script == Some(local_state_cs)
           },
         )? && validate_input_and_output(
           inputs,
@@ -158,9 +163,9 @@ validator global_state_validator(
           outputs,
           global_cs,
           GlobalStateDatum {
-            alias: datum.alias,
+            alias,
             local_state_data: create_gs_datum_mint(
-              datum.local_state_data,
+              local_state_data,
               local_state_id,
               local_state_index,
               local_state_data_hash,
@@ -177,16 +182,16 @@ validator global_state_validator(
         new_data_hash,
       } -> {
         let Transaction { inputs, outputs, mint, .. } = tx
-        expect Some(datum) = datum_opt
-        (quantity_of(mint, local_state_cs, datum.alias) < 0)? && validate_input_and_output(
+        expect Some(GlobalStateDatum { alias, local_state_data }) = datum_opt
+        (quantity_of(mint, local_state_cs, alias) < 0)? && validate_input_and_output(
           inputs,
           output_reference,
           outputs,
           global_cs,
           GlobalStateDatum {
-            alias: datum.alias,
+            alias,
             local_state_data: create_gs_datum_burn(
-              datum.local_state_data,
+              local_state_data,
               local_state_id,
               local_state_index,
               local_state_data_hash,
@@ -198,16 +203,16 @@ validator global_state_validator(
       }
       DeleteState { local_state_id, local_state_data_hash, local_state_index } -> {
         let Transaction { inputs, outputs, .. } = tx
-        expect Some(datum) = datum_opt
+        expect Some(GlobalStateDatum { alias, local_state_data }) = datum_opt
         validate_input_and_output(
           inputs,
           output_reference,
           outputs,
           global_cs,
           GlobalStateDatum {
-            alias: datum.alias,
+            alias,
             local_state_data: create_gs_datum_delete(
-              datum.local_state_data,
+              local_state_data,
               local_state_id,
               local_state_data_hash,
               local_state_index,
@@ -218,7 +223,7 @@ validator global_state_validator(
       MoveState { new_state_obs } -> {
         let Transaction { inputs, outputs, reference_inputs, withdrawals, .. } =
           tx
-        expect Some(datum) = datum_opt
+        expect Some(GlobalStateDatum { alias, .. }) = datum_opt
         let init_gs_obs_sh_list =
           find_input_with_policy(reference_inputs, index_ref_cs).output.datum
             |> unconstr_fields()
@@ -229,8 +234,7 @@ validator global_state_validator(
             |> tail_list()
             |> head_list()
             |> un_list_data()
-        let alias = datum.alias
-        quantity_is_one(
+        has_nft(
           find_input(inputs, output_reference).output.value,
           global_cs,
           create_global_tn(alias),

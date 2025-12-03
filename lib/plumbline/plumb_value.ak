@@ -1,11 +1,17 @@
-use aiken/collection/dict.{empty, insert, size, to_pairs}
-use aiken/collection/list.{all}
+use aiken/collection/dict.{empty, insert}
+use aiken/collection/list.{all, any}
 use aiken/primitive/bytearray.{concat}
 use cardano/assets.{
-  AssetName, PolicyId, Value, add, flatten, quantity_of, to_dict, tokens,
-  without_lovelace, zero,
+  AssetName, PolicyId, Value, add, flatten, policies, quantity_of, tokens, zero,
 }
 use plumbline/types/flat_value.{FlatValue}
+
+/// Check if a policy id is present in an output
+pub fn policy_id_present_in_value(value: Value, policy_id: PolicyId) -> Bool {
+  value
+    |> policies
+    |> any(fn(n) { n == policy_id })
+}
 
 /// Check if only one token name with a specific policy id is an value with given amount.
 /// Useful to check minting values.
@@ -18,20 +24,6 @@ pub fn single_name_of_policy_id(
   insert(empty, tn, am) == tokens(value, cs)
 }
 
-/// Check there are exactly 2 tokens in a value.
-/// Useful to check there is only ada and one native token in a value.
-pub fn two_token_value(value: Value) -> Bool {
-  when
-    value
-      |> without_lovelace
-      |> to_dict
-      |> to_pairs
-  is {
-    [Pair(_cs, tn_ams)] -> size(tn_ams) == 1
-    _ -> False
-  }
-}
-
 /// Create a `ByteArray` with `u` as prefix.
 /// Useed for user tokens.
 pub fn create_user_tn(alias: ByteArray) -> ByteArray {
@@ -42,11 +34,6 @@ pub fn create_user_tn(alias: ByteArray) -> ByteArray {
 /// Useful for reference tokens.
 pub fn create_global_tn(alias: ByteArray) -> ByteArray {
   concat(#"67", alias)
-}
-
-/// Check there exists a policy id and token name with amount 1 in a value.
-pub fn quantity_is_one(value: Value, cs: PolicyId, tn: AssetName) -> Bool {
-  quantity_of(value, cs, tn) == 1
 }
 
 /// Check first value is greater or equal to second one.
@@ -82,8 +69,8 @@ fn substract_value_helper(
 pub fn flat_val_paid(flat_val: List<FlatValue>, value: Value) -> Bool {
   all(
     flat_val,
-    fn(flat_val) {
-      quantity_of(value, flat_val.policy_id, flat_val.token_name) >= flat_val.amount
+    fn(FlatValue { policy_id, token_name, amount }) {
+      quantity_of(value, policy_id, token_name) >= amount
     },
   )
 }
@@ -92,7 +79,7 @@ pub fn flat_val_paid(flat_val: List<FlatValue>, value: Value) -> Bool {
 pub fn flat_val_to_value(flat_val: List<FlatValue>, value: Value) -> Value {
   when flat_val is {
     [] -> value
-    [x, ..xs] ->
-      flat_val_to_value(xs, add(value, x.policy_id, x.token_name, x.amount))
+    [FlatValue { policy_id, token_name, amount }, ..xs] ->
+      flat_val_to_value(xs, add(value, policy_id, token_name, amount))
   }
 }
