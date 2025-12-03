@@ -1,10 +1,32 @@
-use aiken/collection/dict.{empty, insert}
+use aiken/builtin.{fst_pair, head_list}
+use aiken/collection/dict.{empty, insert, to_pairs}
 use aiken/collection/list.{all, any}
 use aiken/primitive/bytearray.{concat}
 use cardano/assets.{
   AssetName, PolicyId, Value, add, flatten, policies, quantity_of, tokens, zero,
 }
 use plumbline/types/flat_value.{FlatValue}
+
+pub fn token_present_in_value_lazy(
+  value: Value,
+  policy_id: PolicyId,
+  tn: AssetName,
+) -> Bool {
+  tokens(value, policy_id)
+    |> to_pairs
+    |> any(fn(n) { fst_pair(n) == tn })
+}
+
+pub fn token_present_in_value_head(
+  value: Value,
+  policy_id: PolicyId,
+  tn: AssetName,
+) -> Bool {
+  tokens(value, policy_id)
+    |> to_pairs
+    |> head_list
+    |> fn(n) { fst_pair(n) == tn }
+}
 
 /// Check if a policy id is present in an output
 pub fn policy_id_present_in_value(value: Value, policy_id: PolicyId) -> Bool {

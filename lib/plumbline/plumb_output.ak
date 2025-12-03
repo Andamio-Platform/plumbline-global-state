@@ -1,7 +1,8 @@
 use aiken/collection/list.{any, find}
 use cardano/address.{Address}
-use cardano/assets.{AssetName, PolicyId, Value, has_nft, merge, policies, zero}
+use cardano/assets.{AssetName, PolicyId, Value, merge, policies, zero}
 use cardano/transaction.{Output}
+use plumbline/plumb_value.{token_present_in_value_lazy}
 
 /// Check if a policy id is present in an output
 pub fn policy_id_present_in_output(output: Output, policy_id: PolicyId) -> Bool {
@@ -18,14 +19,19 @@ pub fn policy_id_present_in_outputs(
   any(outputs, fn(output) { policy_id_present_in_output(output, policy_id) })
 }
 
-/// Find an output which has a token with quantity one attached.
-/// Fails if quantity > 1 or there is no utxo with that token attached.
-pub fn find_output_with_single_token(
+/// Find an output which has a token attached.
+/// Fails if no utxo with that token attached.
+pub fn find_output_with_token(
   outputs: List<Output>,
   policy: PolicyId,
   name: AssetName,
 ) -> Output {
-  when find(outputs, fn(output) { has_nft(output.value, policy, name) }) is {
+  when
+    find(
+      outputs,
+      fn(output) { token_present_in_value_lazy(output.value, policy, name) },
+    )
+  is {
     Some(out) -> out
     _ -> fail @"no output with that token"
   }
