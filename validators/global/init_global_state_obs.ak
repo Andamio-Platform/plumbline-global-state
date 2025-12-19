@@ -15,12 +15,21 @@ use plumbline/types/global_state.{GlobalStateDatum}
 
 validator init_global_state_obs_v2(
   global_policy_id: PolicyId,
+  init_index_policy_id: PolicyId,
   global_state_addr: Address,
 ) {
   withdraw(redeemer: ByteArray, _account: Credential, tx: Transaction) {
     let Transaction { outputs, inputs, redeemers, .. } = tx
     expect [_input] =
-      filter(inputs, fn(n) { has(policies(n.output.value), global_policy_id) })
+      filter(
+        inputs,
+        fn(n) {
+          has(policies(n.output.value), global_policy_id) || has(
+            policies(n.output.value),
+            init_index_policy_id,
+          )
+        },
+      )
     let global_mint_purpose_red = Pair(Mint(global_policy_id), b_data(redeemer))
     let is_access_token_minting =
       any(

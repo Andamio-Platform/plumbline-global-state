@@ -16,6 +16,7 @@ use plumbproof.{
 fn init_gs_obs_withdraw(red: ByteArray, tx: Transaction) {
   init_obs.init_global_state_obs_v2.withdraw(
     global_cs,
+    "init_index_policy_id",
     global_state_addr,
     red,
     Script(blake2b_224("init_obs")),
