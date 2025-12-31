@@ -6,7 +6,7 @@ use aiken/builtin.{
 use aiken/collection/list.{any}
 use aiken/collection/pairs.{has_key}
 use cardano/address.{Script}
-use cardano/assets.{PolicyId, has_nft, quantity_of}
+use cardano/assets.{PolicyId, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
@@ -16,6 +16,7 @@ use plumbline/plumb_input.{
 }
 use plumbline/plumb_value.{
   create_global_tn, create_user_tn, policy_id_present_in_value,
+  token_present_in_value_head,
 }
 use plumbline/types/global_state.{
   BurnLocalState, DeleteState, GlobalStateAction, GlobalStateDatum,
@@ -41,7 +42,7 @@ pub fn validate_input_and_output(
   let Output { address: input_address, value: input_value, .. } = own_input
   let alias = gs_datum.alias
   let tn_r = create_global_tn(alias)
-  has_nft(input_value, global_cs, tn_r)? && in_out_token_address_same(
+  token_present_in_value_head(input_value, global_cs, tn_r)? && in_out_token_address_same(
     inputs,
     outputs,
     global_cs,
@@ -49,7 +50,7 @@ pub fn validate_input_and_output(
   )? && any(
     outputs,
     fn(Output { address, value, datum, .. }) {
-      (address == input_address)? && (datum == InlineDatum(gs_datum))? && has_nft(
+      (address == input_address)? && (datum == InlineDatum(gs_datum))? && token_present_in_value_head(
         value,
         global_cs,
         tn_r,
@@ -234,7 +235,7 @@ validator global_state_validator(
             |> tail_list()
             |> head_list()
             |> un_list_data()
-        has_nft(
+        token_present_in_value_head(
           find_input(inputs, output_reference).output.value,
           global_cs,
           create_global_tn(alias),

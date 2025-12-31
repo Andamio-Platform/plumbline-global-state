@@ -7,8 +7,8 @@ use aiken/collection/pairs
 use aiken/primitive/bytearray
 use cardano/assets.{PolicyId}
 use cardano/transaction.{Input, Redeemer, ScriptPurpose, Spend}
-use plumbline/plumb_input.{find_input_with_single_token}
-use plumbline/plumb_redeemers.{get_single_token_spend_redeemer_by_constructor}
+use plumbline/plumb_input.{find_input_with_token}
+use plumbline/plumb_redeemers.{get_token_spend_redeemer_by_constructor}
 use plumbline/plumb_value.{create_global_tn}
 
 /// Returns a BLAKE2b-256 hash of the local state by combining the state data hash
@@ -111,7 +111,7 @@ pub fn validate_global_state_mint_ls_no_prereqs(
   ls_cs: PolicyId,
 ) -> Bool {
   let global_state_redeemer_fields =
-    get_single_token_spend_redeemer_by_constructor(
+    get_token_spend_redeemer_by_constructor(
       inputs,
       redeemers,
       0,
@@ -131,7 +131,7 @@ pub fn get_local_state_data(
   alias: ByteArray,
 ) -> Pairs<PolicyId, ByteArray> {
   expect local_state_data: Pairs<PolicyId, ByteArray> =
-    find_input_with_single_token(inputs, global_cs, create_global_tn(alias)).output.datum
+    find_input_with_token(inputs, global_cs, create_global_tn(alias)).output.datum
       |> unconstr_fields()
       |> head_list()
       |> unconstr_fields()
@@ -153,7 +153,7 @@ pub fn validate_global_state_mint_ls_with_prereqs(
   ls_cs: PolicyId,
 ) -> Bool {
   let Input { output, output_reference } =
-    find_input_with_single_token(inputs, global_cs, create_global_tn(alias))
+    find_input_with_token(inputs, global_cs, create_global_tn(alias))
   expect local_state_data: Pairs<PolicyId, ByteArray> =
     output.datum
       |> unconstr_fields()
@@ -189,7 +189,7 @@ pub fn validate_global_state_burn_ls(
   new_state_hash: ByteArray,
 ) -> Bool {
   let global_state_redeemer_fields =
-    get_single_token_spend_redeemer_by_constructor(
+    get_token_spend_redeemer_by_constructor(
       inputs,
       redeemers,
       1,

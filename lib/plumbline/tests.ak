@@ -9,20 +9,20 @@ use plumbline/plumb_global_state.{
   validate_global_state_mint_ls_with_prereqs,
 }
 use plumbline/plumb_input.{
-  find_input, find_input_with_policy, find_input_with_single_token,
+  find_input, find_input_with_policy, find_input_with_token,
   in_out_token_address_same, merge_value_inputs,
 }
 use plumbline/plumb_output.{
-  find_output_with_addr, find_output_with_single_token, merge_values_output,
+  find_output_with_addr, find_output_with_token, merge_values_output,
   policy_id_present_in_outputs,
 }
 use plumbline/plumb_redeemers.{
-  get_single_token_spend_redeemer,
-  get_single_token_spend_redeemer_by_constructor,
+  get_token_spend_redeemer, get_token_spend_redeemer_by_constructor,
 }
 use plumbline/plumb_value.{
   create_global_tn, flat_val_paid, flat_val_to_value, geq_value,
-  single_name_of_policy_id, substract_value,
+  single_name_of_policy_id, substract_value, token_present_in_value_head,
+  token_present_in_value_lazy,
 }
 use plumbline/types/flat_value.{FlatValue}
 use plumbline/types/global_state.{
@@ -256,19 +256,15 @@ test find_input_with_policy_fail1_cs() fail {
   find_input_with_policy(inputs, blake2b_224("cs4")) == mock_input("cs3")
 }
 
-// find_input_with_single_token
-test find_input_with_single_token_test_true() {
+// find_input_with_token
+test find_input_with_token_test_true() {
   let outs = [mock_input("cs1"), mock_input("cs2")]
-  find_input_with_single_token(outs, blake2b_224("cs2"), "cs2") == mock_input(
-    "cs2",
-  )
+  find_input_with_token(outs, blake2b_224("cs2"), "cs2") == mock_input("cs2")
 }
 
-test find_input_with_single_token_test_fail() fail {
+test find_input_with_token_test_fail() fail {
   let outs = [mock_input("cs1"), mock_input("cs2")]
-  find_input_with_single_token(outs, blake2b_224("cs3"), "cs3") == mock_input(
-    "cs2",
-  )
+  find_input_with_token(outs, blake2b_224("cs3"), "cs3") == mock_input("cs2")
 }
 
 // in_out_token_address_same
@@ -347,25 +343,25 @@ test policy_id_present_in_outputs_test_fail() fail {
   policy_id_present_in_outputs(outs, blake2b_224("cs2"))
 }
 
-// find_output_with_single_token
-test find_output_with_single_token_test_true() {
+// find_output_with_token
+test find_output_with_token_test_true() {
   let outs =
     [
       mock_pub_key_token_output_by_bytearray("cs1"),
       mock_pub_key_token_output_by_bytearray("cs2"),
     ]
-  find_output_with_single_token(outs, blake2b_224("cs2"), "cs2") == mock_pub_key_token_output_by_bytearray(
+  find_output_with_token(outs, blake2b_224("cs2"), "cs2") == mock_pub_key_token_output_by_bytearray(
     "cs2",
   )
 }
 
-test find_output_with_single_token_fail() fail {
+test find_output_with_token_fail() fail {
   let outs =
     [
       mock_pub_key_token_output_by_bytearray("cs1"),
       mock_pub_key_token_output_by_bytearray("cs2"),
     ]
-  find_output_with_single_token(outs, blake2b_224("cs3"), "cs3") == mock_pub_key_token_output_by_bytearray(
+  find_output_with_token(outs, blake2b_224("cs3"), "cs3") == mock_pub_key_token_output_by_bytearray(
     "cs2",
   )
 }
@@ -432,7 +428,7 @@ test merge_values_output_succeed_native() {
 
 // Redeemers
 
-// get_single_token_spend_redeemer
+// get_token_spend_redeemer
 test get_single_token_spend_redeemer_succeed() {
   let inputs =
     [
@@ -445,7 +441,7 @@ test get_single_token_spend_redeemer_succeed() {
       ),
     ]
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), b_data("b"))]
-  get_single_token_spend_redeemer(inputs, redeemers, blake2b_224("a"), "a") == b_data(
+  get_token_spend_redeemer(inputs, redeemers, blake2b_224("a"), "a") == b_data(
     "b",
   )
 }
@@ -462,7 +458,7 @@ test get_single_token_spend_redeemer_fail1_ref() fail {
       ),
     ]
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 1)), b_data("b"))]
-  get_single_token_spend_redeemer(inputs, redeemers, blake2b_224("a"), "a") == b_data(
+  get_token_spend_redeemer(inputs, redeemers, blake2b_224("a"), "a") == b_data(
     "b",
   )
 }
@@ -472,7 +468,7 @@ type MyRedeemer {
   Two(ByteArray)
 }
 
-// get_single_token_spend_redeemer_by_constructor
+// get_token_spend_redeemer_by_constructor
 test get_single_token_spend_redeemer_by_constructor_succeed() {
   let inputs =
     [
@@ -488,7 +484,7 @@ test get_single_token_spend_redeemer_by_constructor_succeed() {
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), redeemer)]
   un_b_data(
     head_list(
-      get_single_token_spend_redeemer_by_constructor(
+      get_token_spend_redeemer_by_constructor(
         inputs,
         redeemers,
         0,
@@ -514,7 +510,7 @@ test get_single_token_spend_redeemer_by_constructor_fail1_constructor() fail {
   let redeemers = [Pair(Spend(mock_utxo_ref("0", 0)), redeemer)]
   un_b_data(
     head_list(
-      get_single_token_spend_redeemer_by_constructor(
+      get_token_spend_redeemer_by_constructor(
         inputs,
         redeemers,
         0,
@@ -532,6 +528,28 @@ const some_value =
     |> add("cs1", "tn1", 1)
     |> add("cs2", "tn2", 1)
     |> add("cs3", "tn3", 1)
+
+//token_present_in_value_lazy
+test token_present_in_value_lazy_succeed() {
+  let some_value_ = add(some_value, "cs1", "a", 3)
+  token_present_in_value_lazy(some_value_, "cs1", "tn1")
+}
+
+//token_present_in_value_lazy
+test token_present_in_value_lazy_fail1() fail {
+  let some_value_ = add(some_value, "cs1", "a", 3)
+  token_present_in_value_lazy(some_value_, "cs1", "b")
+}
+
+//token_present_in_value_head
+test token_present_in_value_head_succeed() {
+  token_present_in_value_head(some_value, "cs1", "tn1")
+}
+
+test token_present_in_value_head_fail1() fail {
+  let some_value_ = add(some_value, "cs1", "a", 3)
+  token_present_in_value_head(some_value_, "cs1", "tn1")
+}
 
 // single_name_of_policy_id
 test single_name_of_policy_id_succed() {

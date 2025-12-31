@@ -117,14 +117,13 @@ Migrates the global state to a new validator version.
 ```
 
 ## init-global-state-obs
-A Cardano validator written in Aiken that serves as a migration and initialization validator for a Global State. This observer uses zero withdrawal mechanics to validate critical state transitions and initialization.
+A Cardano validator written in Aiken that serves as a initialization validator for a Global State. This observer uses zero withdrawal mechanics to validate critical state transitions and initialization.
 
 ### Overview
 
-The Zero Withdrawal Observer handles two primary functions:
+The Zero Withdrawal Observer handles one primary functions:
 
 - New User Initialization: Creates empty global states for first-time users
-- V1 to V2 Migration: Upgrades existing users from Global State V1 to V2
 
 This validator acts as a "watcher" that ensures proper state transitions.
 
@@ -146,57 +145,6 @@ Creates a fresh global state for users joining the system.
 // token name without prefix
 alias: ByteArray
 ```
-
-#### 2. V1 to V2 Migration
-Upgrades existing V1 datum to the new V2 datum type.
-
-**Flow:**
-```V1 user initiates migration → Zero withdrawal triggered → Data converted to V2 format```
-
-**Requirements:**
-
-- No token minting (Token `g` from global state v1)
-- All local states must be in unminted state
-- V1 input must be found with existing token
-
-**Redeemer:**
-```
-// token name without prefix
-alias: ByteArray
-```
-
-**DataMigration:**
-```aiken
-pub type LocalStateInformationV1 {
-  local_state_id: PolicyId,
-  local_state_data: List<ByteArray>,
-  minted: Bool,
-}
-
-pub type GlobalStateDatumV1 {
-  global_cs: PolicyId,
-  user_name: ByteArray,
-  local_state_infos: List<LocalStateInformationV1>,
-  user_info: Data,
-}
-```
-- v1 currently attached to Token `g` at global state v1 validator
-```
-Pair(local_state_id, blake2b_256(serialise_data(local_state_data, "")))
-```
-- if minted == False, serialize and hash local_state_data and make it a pair
-```
-/// Global state of a user always attached to the global state token.
-pub type GlobalStateDatum {
-  /// Alias to identify user, no prefix.
-  alias: ByteArray,
-  /// Each pair represents one local state. 
-  /// `PolicyId` to identify local state.
-  /// `ByteArray` data + local state token as blake2b_256 hash
-  local_state_data: Pairs<PolicyId, ByteArray>,
-}
-```
-- new global state datum: same data, different representation
 
 ## local-state-registration
 A Cardano validator written in Aiken that manages local state reference scripts for the Global State system. This validator creates and manages reference UTXOs that store local state scripts, enabling efficient discovery of local states.
