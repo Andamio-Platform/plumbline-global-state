@@ -197,6 +197,8 @@ aiken docs
 
 ## Building
 
+Requires Aiken v1.1.19.
+
 ```sh
 aiken build
 ```
@@ -213,3 +215,13 @@ To run only tests matching the string `global_state`, do:
 ```sh
 aiken check -m global_state
 ```
+
+## Audit
+
+This codebase was audited by [TxPipe](https://txpipe.io) (December 31st, 2025). The full report is available at [audits/TxPipe.pdf](audits/TxPipe.pdf).
+
+6 findings were identified across both this repository and [andamio-access-token](https://github.com/Andamio-Platform/access-token). 5 are resolved. 1 is acknowledged but not fixed:
+
+**AND-202 (Minor)** — Missing checks in the `IndexData` fields related to the treasury fees output. The `treasuryAddr`, `mintAccessTokenValue`, and `treasuryDatum` fields are not validated against ledger rules on-chain. The impact depends on the field: a misconfigured `treasuryAddr` or `treasuryDatum` would only affect fee collection — minting access tokens would still work, the fee receiver simply would not receive the fees correctly. Only a misconfigured `mintAccessTokenValue` containing no ADA could cause a temporary freeze of minting, as the ledger requires ADA in outputs. In all cases no funds are at risk and the issue is resolvable by the admin submitting a corrective update.
+
+The decision not to enforce these checks on-chain was intentional. Updates to `IndexData` are gated by the presence of an admin NFT (`irppMasterAdmin`). That NFT can be held in a simple wallet (currently a multisig) or locked at a validator — and it is that validator which can enforce any additional rules. This design keeps the core contract flexible and future-proof: stricter validation can be introduced at any time by moving the admin NFT into a dedicated validator, without changing the audited contracts. See the audit report (section 5.d) for full details.
